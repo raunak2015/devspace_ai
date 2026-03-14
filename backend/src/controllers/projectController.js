@@ -1,4 +1,5 @@
 const Project = require('../models/Project');
+const Task = require('../models/Task');
 
 async function createProject(req, res, next) {
     try {
@@ -37,7 +38,45 @@ async function listProjects(_req, res, next) {
     }
 }
 
+async function getProjectSummary(req, res, next) {
+    try {
+        const ownerId = req.user?.id;
+        const projects = await Project.find({ owner: ownerId }).select('_id');
+        const projectIds = projects.map((project) => String(project._id));
+
+        const totalProjects = projectIds.length;
+
+        if (totalProjects === 0) {
+            return res.status(200).json({
+                summary: {
+                    totalProjects: 0,
+                    totalTasks: 0,
+                    completedTasks: 0,
+                    pendingTasks: 0
+                }
+            });
+        }
+
+        const [totalTasks, completedTasks] = await Promise.all([
+            Task.countDocuments({ projectId: { $in: projectIds } }),
+            Task.countDocuments({ projectId: { $in: projectIds }, status: 'Completed' })
+        ]);
+
+        res.status(200).json({
+            summary: {
+                totalProjects,
+                totalTasks,
+                completedTasks,
+                pendingTasks: Math.max(totalTasks - completedTasks, 0)
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     createProject,
-    listProjects
+    listProjects,
+    getProjectSummary
 };

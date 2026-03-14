@@ -50,6 +50,15 @@ async function apiFetch(path, options = {}) {
 
     if (!response.ok) {
         const message = data?.message || 'Request failed. Please try again.';
+
+        if (
+            response.status === 401 &&
+            /invalid signature|jwt|token|session expired|authorization/i.test(message)
+        ) {
+            localStorage.removeItem(SESSION_KEY);
+            throw new Error('Session expired. Please log in again.');
+        }
+
         throw new Error(message);
     }
 
@@ -68,4 +77,12 @@ function post(path, payload) {
     });
 }
 
-export { get, post };
+function patch(path, payload) {
+    return apiFetch(path, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+}
+
+export { get, post, patch };

@@ -66,7 +66,47 @@ async function listTasks(req, res, next) {
     }
 }
 
+async function updateTaskStatus(req, res, next) {
+    try {
+        const { taskId } = req.params;
+        const { status } = req.body;
+
+        if (!status) {
+            res.status(400);
+            throw new Error('Task status is required.');
+        }
+
+        if (!['To Do', 'In Progress', 'Completed'].includes(status)) {
+            res.status(400);
+            throw new Error('Invalid task status.');
+        }
+
+        const task = await Task.findById(taskId);
+        if (!task) {
+            res.status(404);
+            throw new Error('Task not found.');
+        }
+
+        const project = await Project.findOne({ _id: task.projectId, owner: req.user?.id });
+        if (!project) {
+            res.status(403);
+            throw new Error('You are not allowed to update tasks for this project.');
+        }
+
+        task.status = status;
+        await task.save();
+
+        res.status(200).json({
+            message: 'Task status updated successfully.',
+            task
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     createTask,
-    listTasks
+    listTasks,
+    updateTaskStatus
 };

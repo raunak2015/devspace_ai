@@ -1,10 +1,35 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { get } from '../services/apiService';
 
 function DashboardPage() {
   const { user, logout } = useAuth();
   const { isDark } = useTheme();
+  const [summary, setSummary] = useState({
+    totalProjects: 0,
+    totalTasks: 0,
+    completedTasks: 0,
+    pendingTasks: 0
+  });
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState('');
+
+  useEffect(() => {
+    get('/projects/summary')
+      .then((data) => {
+        setSummary(data?.summary || {
+          totalProjects: 0,
+          totalTasks: 0,
+          completedTasks: 0,
+          pendingTasks: 0
+        });
+      })
+      .catch((err) => setSummaryError(err.message))
+      .finally(() => setSummaryLoading(false));
+  }, []);
+
   const pageClass = isDark ? 'bg-stone-950 text-stone-100' : 'bg-amber-50 text-stone-900';
   const cardClass = isDark
     ? 'border-stone-700 bg-stone-900/85 shadow-[0_18px_42px_rgba(0,0,0,0.35)]'
@@ -32,6 +57,24 @@ function DashboardPage() {
             </button>
           </div>
         </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: 'Projects', value: summary.totalProjects },
+            { label: 'Total Tasks', value: summary.totalTasks },
+            { label: 'Completed', value: summary.completedTasks },
+            { label: 'Pending', value: summary.pendingTasks }
+          ].map((item) => (
+            <div key={item.label} className={`rounded-xl border p-3 ${outlineClass}`}>
+              <p className={`text-xs ${subtitleClass}`}>{item.label}</p>
+              <p className="mt-1 text-xl font-semibold">{summaryLoading ? '...' : item.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {summaryError && (
+          <p className="mt-3 text-sm text-red-500">{summaryError}</p>
+        )}
 
         {/* Navigation Cards */}
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { get, post } from '../services/apiService';
+import { get, patch, post } from '../services/apiService';
 
 const STATUSES = ['To Do', 'In Progress', 'Completed'];
 
@@ -17,6 +17,7 @@ function TasksPage() {
     const [newDesc, setNewDesc] = useState('');
     const [creating, setCreating] = useState(false);
     const [formError, setFormError] = useState('');
+    const [updatingTaskId, setUpdatingTaskId] = useState('');
 
     const pageClass = isDark ? 'bg-stone-950 text-stone-100' : 'bg-amber-50 text-stone-900';
     const headerCardClass = isDark
@@ -83,13 +84,28 @@ function TasksPage() {
         }
     }
 
-    function moveTaskNext(taskId, currentStatus) {
+    async function moveTaskNext(taskId, currentStatus) {
         const nextIndex = STATUSES.indexOf(currentStatus) + 1;
         if (nextIndex >= STATUSES.length) return;
         const nextStatus = STATUSES[nextIndex];
+
+        setUpdatingTaskId(taskId);
+
+        // Optimistic UI update for snappy task movement.
         setTasks(prev =>
             prev.map(t => t._id === taskId ? { ...t, status: nextStatus } : t)
         );
+
+        try {
+            await patch(`/tasks/${taskId}/status`, { status: nextStatus });
+        } catch (err) {
+            setTasks(prev =>
+                prev.map(t => t._id === taskId ? { ...t, status: currentStatus } : t)
+            );
+            setError(err.message);
+        } finally {
+            setUpdatingTaskId('');
+        }
     }
 
     const tasksByStatus = status => tasks.filter(t => t.status === status);
@@ -139,9 +155,10 @@ function TasksPage() {
                                         {status !== 'Completed' && (
                                             <button
                                                 onClick={() => moveTaskNext(task._id, status)}
-                                                className={`mt-2 ${btnOutline}`}
+                                                disabled={updatingTaskId === task._id}
+                                                className={`mt-2 ${btnOutline} disabled:opacity-60`}
                                             >
-                                                → {STATUSES[STATUSES.indexOf(status) + 1]}
+                                                {updatingTaskId === task._id ? 'Updating…' : `→ ${STATUSES[STATUSES.indexOf(status) + 1]}`}
                                             </button>
                                         )}
                                     </div>

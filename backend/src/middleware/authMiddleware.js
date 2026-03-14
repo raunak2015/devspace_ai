@@ -30,6 +30,11 @@ async function authenticate(req, res, next) {
 
         next();
     } catch (error) {
+        if (error?.name === 'JsonWebTokenError' || error?.name === 'TokenExpiredError' || error?.name === 'NotBeforeError') {
+            res.status(401);
+            return next(new Error('Session expired. Please log in again.'));
+        }
+
         if (res.statusCode === 200) {
             res.status(401);
         }
