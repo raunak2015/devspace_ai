@@ -12,7 +12,12 @@ export function AuthProvider({ children }) {
     const raw = localStorage.getItem(SESSION_KEY);
     if (raw) {
       try {
-        setUser(JSON.parse(raw));
+        const session = JSON.parse(raw);
+        if (session?.user && session?.token) {
+          setUser(session.user);
+        } else if (session?.email) {
+          setUser(session);
+        }
       } catch {
         localStorage.removeItem(SESSION_KEY);
       }
@@ -27,13 +32,20 @@ export function AuthProvider({ children }) {
     });
 
     const sessionUser = response?.user;
+    const token = response?.token;
 
-    if (!sessionUser) {
+    if (!sessionUser || !token) {
       throw new Error('Unexpected server response during login.');
     }
 
     setUser(sessionUser);
-    localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
+    localStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify({
+        user: sessionUser,
+        token
+      })
+    );
     return sessionUser;
   };
 

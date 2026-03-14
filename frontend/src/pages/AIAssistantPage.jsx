@@ -35,7 +35,7 @@ function AIAssistantPage() {
         setError('');
         setResponse('');
         try {
-            const data = await post('/ai/explain', { code: trimmed });
+            const data = await post('/ai/explain', { prompt: trimmed });
             setResponse(data.explanation || data.message || 'No response received.');
         } catch (err) {
             setError(err.message);

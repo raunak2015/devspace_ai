@@ -2,7 +2,8 @@ const Project = require('../models/Project');
 
 async function createProject(req, res, next) {
     try {
-        const { name, owner, members } = req.body;
+        const { name, members } = req.body;
+        const owner = req.user?.id;
 
         if (!name || !owner) {
             res.status(400);
@@ -26,7 +27,7 @@ async function createProject(req, res, next) {
 
 async function listProjects(_req, res, next) {
     try {
-        const projects = await Project.find().sort({ createdAt: -1 });
+        const projects = await Project.find({ owner: _req.user?.id }).sort({ createdAt: -1 });
 
         res.status(200).json({
             projects

@@ -1,7 +1,35 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const SESSION_KEY = 'devspace_user';
+
+function getAuthToken() {
+    const raw = localStorage.getItem(SESSION_KEY);
+
+    if (!raw) {
+        return '';
+    }
+
+    try {
+        const session = JSON.parse(raw);
+        return session?.token || '';
+    } catch {
+        return '';
+    }
+}
 
 async function apiFetch(path, options = {}) {
-    const response = await fetch(`${API_BASE_URL}${path}`, options);
+    const token = getAuthToken();
+    const headers = {
+        ...(options.headers || {})
+    };
+
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        headers
+    });
 
     let data = null;
     try {

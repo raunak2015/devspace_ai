@@ -1,4 +1,5 @@
 const Task = require('../models/Task');
+const Project = require('../models/Project');
 
 async function createTask(req, res, next) {
     try {
@@ -7,6 +8,12 @@ async function createTask(req, res, next) {
         if (!title || !projectId) {
             res.status(400);
             throw new Error('Task title and projectId are required.');
+        }
+
+        const project = await Project.findOne({ _id: projectId, owner: req.user?.id });
+        if (!project) {
+            res.status(403);
+            throw new Error('You are not allowed to add tasks to this project.');
         }
 
         const task = await Task.create({
@@ -33,6 +40,12 @@ async function listTasks(req, res, next) {
         const page = Number.parseInt(req.query.page, 10) || 1;
         const limit = Number.parseInt(req.query.limit, 10) || 10;
         const skip = (page - 1) * limit;
+
+        const project = await Project.findOne({ _id: projectId, owner: req.user?.id });
+        if (!project) {
+            res.status(403);
+            throw new Error('You are not allowed to view tasks for this project.');
+        }
 
         const [tasks, total] = await Promise.all([
             Task.find({ projectId }).sort({ createdAt: -1 }).skip(skip).limit(limit),

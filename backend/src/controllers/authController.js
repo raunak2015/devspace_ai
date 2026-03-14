@@ -1,7 +1,23 @@
 const User = require('../models/User');
+const jwt = require('jsonwebtoken');
+const { getEnvConfig } = require('../config/env');
 
 function normalizeEmail(email) {
     return String(email || '').trim().toLowerCase();
+}
+
+function generateToken(user) {
+    const { jwtSecret } = getEnvConfig();
+
+    return jwt.sign(
+        {
+            id: String(user._id),
+            email: user.email,
+            name: user.name
+        },
+        jwtSecret,
+        { expiresIn: '7d' }
+    );
 }
 
 async function registerUser(req, res, next) {
@@ -36,8 +52,11 @@ async function registerUser(req, res, next) {
             password
         });
 
+        const token = generateToken(user);
+
         res.status(201).json({
             message: 'Account created successfully.',
+            token,
             user: {
                 id: user._id,
                 name: user.name,
@@ -72,8 +91,11 @@ async function loginUser(req, res, next) {
             throw new Error('Invalid email or password.');
         }
 
+        const token = generateToken(user);
+
         res.status(200).json({
             message: 'Login successful.',
+            token,
             user: {
                 id: user._id,
                 name: user.name,
