@@ -1,27 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { loginUser, registerUser } from '../services/authService';
 
 const AuthContext = createContext(null);
 const SESSION_KEY = 'devspace_user';
-const USERS_KEY = 'devspace_users';
-
-function getStoredUsers() {
-  const raw = localStorage.getItem(USERS_KEY);
-  if (!raw) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    localStorage.removeItem(USERS_KEY);
-    return [];
-  }
-}
-
-function saveStoredUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -40,22 +21,16 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async ({ email, password }) => {
-    const normalizedEmail = email.trim().toLowerCase();
-    const users = getStoredUsers();
-    const existingUser = users.find((entry) => entry.email === normalizedEmail);
+    const response = await loginUser({
+      email,
+      password
+    });
 
-    if (!existingUser) {
-      throw new Error('No account found for this email.');
+    const sessionUser = response?.user;
+
+    if (!sessionUser) {
+      throw new Error('Unexpected server response during login.');
     }
-
-    if (existingUser.password !== password) {
-      throw new Error('Incorrect password.');
-    }
-
-    const sessionUser = {
-      name: existingUser.name,
-      email: existingUser.email
-    };
 
     setUser(sessionUser);
     localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
@@ -63,27 +38,13 @@ export function AuthProvider({ children }) {
   };
 
   const signup = async ({ name, email, password }) => {
-    const normalizedEmail = email.trim().toLowerCase();
-    const users = getStoredUsers();
-    const alreadyExists = users.some((entry) => entry.email === normalizedEmail);
+    const response = await registerUser({
+      name,
+      email,
+      password
+    });
 
-    if (alreadyExists) {
-      throw new Error('An account with this email already exists.');
-    }
-
-    const newUser = {
-      id: Date.now().toString(),
-      name: name.trim(),
-      email: normalizedEmail,
-      password,
-      createdAt: new Date().toISOString()
-    };
-
-    saveStoredUsers([...users, newUser]);
-    return {
-      name: newUser.name,
-      email: newUser.email
-    };
+    return response?.user;
   };
 
   const logout = () => {

@@ -93,7 +93,6 @@ function SignupPage() {
     setLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
       await signup({
         name: trimmedName,
         email: trimmedEmail,
