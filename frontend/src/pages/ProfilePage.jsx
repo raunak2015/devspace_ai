@@ -14,6 +14,8 @@ function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [createdAt, setCreatedAt] = useState('');
+  const [profileId, setProfileId] = useState('');
 
   const pageClass = isDark ? 'bg-stone-950 text-stone-100' : 'bg-amber-50 text-stone-900';
   const cardClass = isDark
@@ -29,22 +31,39 @@ function ProfilePage() {
   const buttonClass = 'rounded-lg border border-amber-700 bg-gradient-to-b from-amber-700 to-amber-900 px-4 py-2 text-amber-50 transition hover:-translate-y-0.5 disabled:opacity-60';
 
   useEffect(() => {
+    if (user) {
+      setName((prev) => prev || user.name || '');
+      setEmail((prev) => prev || user.email || '');
+      setCreatedAt((prev) => prev || user.createdAt || '');
+      setProfileId((prev) => prev || user.id || user._id || '');
+    }
+
     setLoading(true);
     refreshProfile()
       .then((profileUser) => {
         setName(profileUser?.name || '');
         setEmail(profileUser?.email || '');
+        setCreatedAt(profileUser?.createdAt || '');
+        setProfileId(profileUser?.id || profileUser?._id || '');
       })
-      .catch((err) => setError(err.message))
+      .catch((err) => {
+        if (!user) {
+          setError(err.message);
+        }
+      })
       .finally(() => setLoading(false));
-  }, [refreshProfile]);
+  }, []);
 
   useEffect(() => {
     if (user) {
       setName((prev) => prev || user.name || '');
       setEmail((prev) => prev || user.email || '');
+      setCreatedAt((prev) => prev || user.createdAt || '');
+      setProfileId((prev) => prev || user.id || user._id || '');
     }
   }, [user]);
+
+  const joinedOn = createdAt ? new Date(createdAt).toLocaleDateString() : 'Unknown';
 
   async function handleSave(e) {
     e.preventDefault();
@@ -114,6 +133,17 @@ function ProfilePage() {
                 className={`${inputClass} opacity-70`}
                 disabled
               />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className={`mb-1 block text-sm ${subtitleClass}`}>User ID</label>
+                <input type="text" value={profileId} className={`${inputClass} opacity-70`} disabled />
+              </div>
+              <div>
+                <label className={`mb-1 block text-sm ${subtitleClass}`}>Joined On</label>
+                <input type="text" value={joinedOn} className={`${inputClass} opacity-70`} disabled />
+              </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

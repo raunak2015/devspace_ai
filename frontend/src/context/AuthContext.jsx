@@ -77,7 +77,15 @@ export function AuthProvider({ children }) {
     }
 
     const raw = localStorage.getItem(SESSION_KEY);
-    const token = raw ? JSON.parse(raw)?.token : '';
+    let token = '';
+
+    if (raw) {
+      try {
+        token = JSON.parse(raw)?.token || '';
+      } catch {
+        localStorage.removeItem(SESSION_KEY);
+      }
+    }
 
     if (token) {
       saveSession(profileUser, token);

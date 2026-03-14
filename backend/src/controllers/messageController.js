@@ -1,6 +1,35 @@
 const Message = require('../models/Message');
 const Project = require('../models/Project');
 
+function normalizeEmail(value) {
+    return String(value || '').trim().toLowerCase();
+}
+
+function escapeRegExp(text) {
+    return String(text || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getProjectAccessFilter(projectId, user) {
+    const ownerId = String(user?.id || '').trim();
+    const email = normalizeEmail(user?.email);
+
+    if (!ownerId) {
+        return { _id: null };
+    }
+
+    if (!email) {
+        return { _id: projectId, owner: ownerId };
+    }
+
+    return {
+        _id: projectId,
+        $or: [
+            { owner: ownerId },
+            { members: { $regex: `^${escapeRegExp(email)}$`, $options: 'i' } }
+        ]
+    };
+}
+
 async function createMessage(req, res, next) {
     try {
         const { projectId, message } = req.body;
@@ -11,7 +40,7 @@ async function createMessage(req, res, next) {
             throw new Error('projectId, sender, and message are required.');
         }
 
-        const project = await Project.findOne({ _id: projectId, owner: req.user?.id });
+        const project = await Project.findOne(getProjectAccessFilter(projectId, req.user));
         if (!project) {
             res.status(403);
             throw new Error('You are not allowed to post messages in this project.');
@@ -39,7 +68,7 @@ async function listMessages(req, res, next) {
         const limit = Number.parseInt(req.query.limit, 10) || 20;
         const skip = (page - 1) * limit;
 
-        const project = await Project.findOne({ _id: projectId, owner: req.user?.id });
+        const project = await Project.findOne(getProjectAccessFilter(projectId, req.user));
         if (!project) {
             res.status(403);
             throw new Error('You are not allowed to view messages for this project.');
@@ -64,7 +93,40 @@ async function listMessages(req, res, next) {
     }
 }
 
+async function deleteMessage(req, res, next) {
+    try {
+        const { messageId } = req.params;
+        const currentSender = String(req.user?.name || req.user?.email || '').trim();
+
+        const message = await Message.findById(messageId);
+        if (!message) {
+            res.status(404);
+            throw new Error('Message not found.');
+        }
+
+        const project = await Project.findOne(getProjectAccessFilter(message.projectId, req.user));
+        if (!project) {
+            res.status(403);
+            throw new Error('You are not allowed to delete messages for this project.');
+        }
+
+        if (!currentSender || String(message.sender).trim() !== currentSender) {
+            res.status(403);
+            throw new Error('You can only delete your own messages.');
+        }
+
+        await Message.deleteOne({ _id: messageId });
+
+        res.status(200).json({
+            message: 'Message deleted successfully.'
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     createMessage,
-    listMessages
+    listMessages,
+    deleteMessage
 };

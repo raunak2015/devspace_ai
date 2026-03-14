@@ -24,6 +24,12 @@ function TasksPage() {
     const [formError, setFormError] = useState('');
     const [updatingTaskId, setUpdatingTaskId] = useState('');
     const [deletingTaskId, setDeletingTaskId] = useState('');
+    const [editingTaskId, setEditingTaskId] = useState('');
+    const [editTitle, setEditTitle] = useState('');
+    const [editDesc, setEditDesc] = useState('');
+    const [editAssignee, setEditAssignee] = useState('');
+    const [editDeadline, setEditDeadline] = useState('');
+    const [savingEdit, setSavingEdit] = useState(false);
 
     const pageClass = isDark ? 'bg-stone-950 text-stone-100' : 'bg-amber-50 text-stone-900';
     const headerCardClass = isDark
@@ -57,7 +63,9 @@ function TasksPage() {
         setError('');
 
         try {
-            const data = await get(`/tasks/${projectId}?page=${targetPage}&limit=10`);
+            const query = searchTerm.trim();
+            const searchParam = query ? `&q=${encodeURIComponent(query)}` : '';
+            const data = await get(`/tasks/${projectId}?page=${targetPage}&limit=10${searchParam}`);
             setTasks(data.tasks || []);
             setPagination(data.pagination || { page: targetPage, totalPages: 1, total: 0, limit: 10 });
         } catch (err) {
@@ -72,6 +80,10 @@ function TasksPage() {
     useEffect(() => {
         loadTasks(page, true);
     }, [projectId, page]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [searchTerm]);
 
     function openAddForm(status) {
         setAddingTo(status);
@@ -193,6 +205,66 @@ function TasksPage() {
         return date.toLocaleDateString();
     };
 
+    const isOverdue = (task) => {
+        if (!task?.deadline || task.status === 'Completed') return false;
+        const deadlineDate = new Date(task.deadline);
+        if (Number.isNaN(deadlineDate.getTime())) return false;
+        return deadlineDate.getTime() < Date.now();
+    };
+
+    const formatDeadlineInput = (value) => {
+        if (!value) return '';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '';
+        return date.toISOString().split('T')[0];
+    };
+
+    const startEditTask = (task) => {
+        setEditingTaskId(task._id);
+        setEditTitle(task.title || '');
+        setEditDesc(task.description || '');
+        setEditAssignee(task.assignedTo || '');
+        setEditDeadline(formatDeadlineInput(task.deadline));
+        setFormError('');
+        setError('');
+    };
+
+    const cancelEditTask = () => {
+        setEditingTaskId('');
+        setEditTitle('');
+        setEditDesc('');
+        setEditAssignee('');
+        setEditDeadline('');
+        setSavingEdit(false);
+    };
+
+    const saveTaskEdit = async (taskId) => {
+        const trimmedTitle = editTitle.trim();
+        if (!trimmedTitle) {
+            setFormError('Title is required.');
+            return;
+        }
+
+        setSavingEdit(true);
+        setFormError('');
+
+        try {
+            const data = await patch(`/tasks/${taskId}`, {
+                title: trimmedTitle,
+                description: editDesc.trim(),
+                assignedTo: editAssignee.trim(),
+                deadline: editDeadline || null
+            });
+
+            setTasks((prev) => prev.map((task) => (task._id === taskId ? data.task : task)));
+            cancelEditTask();
+        } catch (err) {
+            setFormError(err.message);
+        } finally {
+            setSavingEdit(false);
+        }
+    };
+
     return (
         <div className={`min-h-screen px-4 py-8 font-serif ${pageClass}`}>
             <div className="mx-auto max-w-5xl">
@@ -264,34 +336,100 @@ function TasksPage() {
 
                                 {/* Task cards */}
                                 {tasksByStatus(status).map(task => (
-                                    <div key={task._id} className={taskCardClass}>
-                                        <p className="font-medium text-sm leading-snug">{task.title}</p>
-                                        {task.description && (
-                                            <p className={`mt-1 text-xs ${subtitleClass}`}>{task.description}</p>
+                                    <div
+                                        key={task._id}
+                                        className={`${taskCardClass} ${isOverdue(task) ? 'ring-1 ring-red-500/60 bg-red-500/5' : ''}`}
+                                    >
+                                        {editingTaskId === task._id ? (
+                                            <div className="space-y-2">
+                                                <input
+                                                    type="text"
+                                                    value={editTitle}
+                                                    onChange={(e) => setEditTitle(e.target.value)}
+                                                    className={inputClass}
+                                                    placeholder="Task title"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={editDesc}
+                                                    onChange={(e) => setEditDesc(e.target.value)}
+                                                    className={inputClass}
+                                                    placeholder="Description"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={editAssignee}
+                                                    onChange={(e) => setEditAssignee(e.target.value)}
+                                                    className={inputClass}
+                                                    placeholder="Assignee"
+                                                />
+                                                <input
+                                                    type="date"
+                                                    value={editDeadline}
+                                                    onChange={(e) => setEditDeadline(e.target.value)}
+                                                    className={inputClass}
+                                                />
+                                                {formError && <p className="text-xs text-red-500">{formError}</p>}
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => saveTaskEdit(task._id)}
+                                                        disabled={savingEdit}
+                                                        className={`${btnPrimary} disabled:opacity-60`}
+                                                    >
+                                                        {savingEdit ? 'Saving…' : 'Save'}
+                                                    </button>
+                                                    <button type="button" onClick={cancelEditTask} className={btnOutline}>
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <p className="font-medium text-sm leading-snug">{task.title}</p>
+                                                    {isOverdue(task) && (
+                                                        <span className="rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-500">
+                                                            Overdue
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {task.description && (
+                                                    <p className={`mt-1 text-xs ${subtitleClass}`}>{task.description}</p>
+                                                )}
+                                                {task.assignedTo && (
+                                                    <p className={`mt-1 text-xs ${subtitleClass}`}>Assigned to {task.assignedTo}</p>
+                                                )}
+                                                {task.deadline && (
+                                                    <p className={`mt-1 text-xs ${subtitleClass}`}>Due {formatDeadline(task.deadline)}</p>
+                                                )}
+                                                {status !== 'Completed' && (
+                                                    <button
+                                                        onClick={() => moveTaskNext(task._id, status)}
+                                                        disabled={updatingTaskId === task._id || deletingTaskId === task._id || editingTaskId === task._id}
+                                                        className={`mt-2 ${btnOutline} disabled:opacity-60`}
+                                                    >
+                                                        {updatingTaskId === task._id ? 'Updating…' : `→ ${STATUSES[STATUSES.indexOf(status) + 1]}`}
+                                                    </button>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => startEditTask(task)}
+                                                    disabled={editingTaskId === task._id}
+                                                    className="mt-2 rounded-lg border border-amber-500/60 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-600 transition hover:bg-amber-500/20 disabled:opacity-60"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteTask(task._id, task.title)}
+                                                    disabled={deletingTaskId === task._id}
+                                                    className="mt-2 rounded-lg border border-red-500/70 bg-red-500/10 px-3 py-1.5 text-xs text-red-500 transition hover:bg-red-500/20 disabled:opacity-60"
+                                                >
+                                                    {deletingTaskId === task._id ? 'Deleting…' : 'Delete'}
+                                                </button>
+                                            </>
                                         )}
-                                        {task.assignedTo && (
-                                            <p className={`mt-1 text-xs ${subtitleClass}`}>Assigned to {task.assignedTo}</p>
-                                        )}
-                                        {task.deadline && (
-                                            <p className={`mt-1 text-xs ${subtitleClass}`}>Due {formatDeadline(task.deadline)}</p>
-                                        )}
-                                        {status !== 'Completed' && (
-                                            <button
-                                                onClick={() => moveTaskNext(task._id, status)}
-                                                disabled={updatingTaskId === task._id || deletingTaskId === task._id}
-                                                className={`mt-2 ${btnOutline} disabled:opacity-60`}
-                                            >
-                                                {updatingTaskId === task._id ? 'Updating…' : `→ ${STATUSES[STATUSES.indexOf(status) + 1]}`}
-                                            </button>
-                                        )}
-                                        <button
-                                            type="button"
-                                            onClick={() => handleDeleteTask(task._id, task.title)}
-                                            disabled={deletingTaskId === task._id}
-                                            className="mt-2 rounded-lg border border-red-500/70 bg-red-500/10 px-3 py-1.5 text-xs text-red-500 transition hover:bg-red-500/20 disabled:opacity-60"
-                                        >
-                                            {deletingTaskId === task._id ? 'Deleting…' : 'Delete'}
-                                        </button>
                                     </div>
                                 ))}
 
