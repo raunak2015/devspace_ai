@@ -51,7 +51,6 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
       await login({
         email: formData.email.trim(),
         password: formData.password
