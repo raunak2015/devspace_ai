@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.lamp-login-shell.is-on .lamp-glow {
+  opacity: 1;
+}
+
+.lamp-login-shell.is-on .lamp-smile {
+  opacity: 1;
+}
+
+.lamp-login-shell.is-on .lamp-mouth {
+  opacity: 1;
+}
+
+@media (max-width: 899px) {
+  .lamp-column {
+    min-height: 320px;
+  }
+
+  .lamp-login-card {
+    max-width: 420px;
+    margin: 0 auto;
+  }
+}
