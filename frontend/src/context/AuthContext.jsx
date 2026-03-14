@@ -15,8 +15,8 @@ export function AuthProvider({ children }) {
         const session = JSON.parse(raw);
         if (session?.user && session?.token) {
           setUser(session.user);
-        } else if (session?.email) {
-          setUser(session);
+        } else {
+          localStorage.removeItem(SESSION_KEY);
         }
       } catch {
         localStorage.removeItem(SESSION_KEY);

@@ -10,14 +10,24 @@ function getAuthToken() {
 
     try {
         const session = JSON.parse(raw);
+        if (session?.user && !session?.token) {
+            localStorage.removeItem(SESSION_KEY);
+            return '';
+        }
         return session?.token || '';
     } catch {
+        localStorage.removeItem(SESSION_KEY);
         return '';
     }
 }
 
 async function apiFetch(path, options = {}) {
     const token = getAuthToken();
+
+    if (!token && !path.startsWith('/auth/')) {
+        throw new Error('Session expired. Please log in again.');
+    }
+
     const headers = {
         ...(options.headers || {})
     };
