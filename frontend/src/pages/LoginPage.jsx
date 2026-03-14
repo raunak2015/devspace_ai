@@ -15,6 +15,7 @@ function LoginPage() {
   const location = useLocation();
   const { login, isAuthenticated } = useAuth();
   const { isDark } = useTheme();
+  const signupMessage = location.state?.signupMessage || '';
 
   useEffect(() => {
     if (lampOn) {
@@ -51,15 +52,15 @@ function LoginPage() {
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
-      login({
-        name: 'DevSpace User',
-        email: formData.email.trim()
+      await login({
+        email: formData.email.trim(),
+        password: formData.password
       });
 
       const redirectTo = location.state?.from?.pathname || '/dashboard';
       navigate(redirectTo, { replace: true });
-    } catch {
-      setError('Login failed. Please try again.');
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -115,6 +116,8 @@ function LoginPage() {
               }`}
           >
             <h2 className={`text-4xl font-bold ${titleClass}`}>Welcome Back</h2>
+
+            {signupMessage ? <p className="mt-3 text-sm text-emerald-400">{signupMessage}</p> : null}
 
             <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
               <div>
