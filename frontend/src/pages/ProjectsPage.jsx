@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { get, post } from '../services/apiService';
+import { del, get, post } from '../services/apiService';
 
 function ProjectsPage() {
     const { user } = useAuth();
@@ -15,6 +15,7 @@ function ProjectsPage() {
     const [newName, setNewName] = useState('');
     const [creating, setCreating] = useState(false);
     const [formError, setFormError] = useState('');
+    const [deletingProjectId, setDeletingProjectId] = useState('');
 
     const pageClass = isDark ? 'bg-stone-950 text-stone-100' : 'bg-amber-50 text-stone-900';
     const cardClass = isDark
@@ -63,6 +64,23 @@ function ProjectsPage() {
             setFormError(err.message);
         } finally {
             setCreating(false);
+        }
+    }
+
+    async function handleDeleteProject(projectId, projectName) {
+        const confirmed = window.confirm(`Delete project "${projectName}"? This will remove all tasks and chat messages.`);
+        if (!confirmed) return;
+
+        setDeletingProjectId(projectId);
+        setError('');
+
+        try {
+            await del(`/projects/${projectId}`);
+            setProjects((prev) => prev.filter((project) => project._id !== projectId));
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setDeletingProjectId('');
         }
     }
 
@@ -142,6 +160,14 @@ function ProjectsPage() {
                                         >
                                             Chat
                                         </Link>
+                                        <button
+                                            type="button"
+                                            disabled={deletingProjectId === project._id}
+                                            onClick={() => handleDeleteProject(project._id, project.name)}
+                                            className="rounded-lg border border-red-500/70 bg-red-500/10 px-3 py-2 text-sm text-red-500 transition hover:bg-red-500/20 disabled:opacity-60"
+                                        >
+                                            {deletingProjectId === project._id ? 'Deleting…' : 'Delete'}
+                                        </button>
                                     </div>
                                 </div>
                             ))}

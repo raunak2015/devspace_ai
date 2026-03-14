@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { get, patch, post } from '../services/apiService';
+import { del, get, patch, post } from '../services/apiService';
 
 const STATUSES = ['To Do', 'In Progress', 'Completed'];
 
@@ -18,6 +18,7 @@ function TasksPage() {
     const [creating, setCreating] = useState(false);
     const [formError, setFormError] = useState('');
     const [updatingTaskId, setUpdatingTaskId] = useState('');
+    const [deletingTaskId, setDeletingTaskId] = useState('');
 
     const pageClass = isDark ? 'bg-stone-950 text-stone-100' : 'bg-amber-50 text-stone-900';
     const headerCardClass = isDark
@@ -108,6 +109,25 @@ function TasksPage() {
         }
     }
 
+    async function handleDeleteTask(taskId, title) {
+        const confirmed = window.confirm(`Delete task "${title}"?`);
+        if (!confirmed) return;
+
+        const previousTasks = tasks;
+        setDeletingTaskId(taskId);
+        setError('');
+        setTasks((prev) => prev.filter((task) => task._id !== taskId));
+
+        try {
+            await del(`/tasks/${taskId}`);
+        } catch (err) {
+            setTasks(previousTasks);
+            setError(err.message);
+        } finally {
+            setDeletingTaskId('');
+        }
+    }
+
     const tasksByStatus = status => tasks.filter(t => t.status === status);
 
     return (
@@ -155,12 +175,20 @@ function TasksPage() {
                                         {status !== 'Completed' && (
                                             <button
                                                 onClick={() => moveTaskNext(task._id, status)}
-                                                disabled={updatingTaskId === task._id}
+                                                disabled={updatingTaskId === task._id || deletingTaskId === task._id}
                                                 className={`mt-2 ${btnOutline} disabled:opacity-60`}
                                             >
                                                 {updatingTaskId === task._id ? 'Updating…' : `→ ${STATUSES[STATUSES.indexOf(status) + 1]}`}
                                             </button>
                                         )}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteTask(task._id, task.title)}
+                                            disabled={deletingTaskId === task._id}
+                                            className="mt-2 rounded-lg border border-red-500/70 bg-red-500/10 px-3 py-1.5 text-xs text-red-500 transition hover:bg-red-500/20 disabled:opacity-60"
+                                        >
+                                            {deletingTaskId === task._id ? 'Deleting…' : 'Delete'}
+                                        </button>
                                     </div>
                                 ))}
 

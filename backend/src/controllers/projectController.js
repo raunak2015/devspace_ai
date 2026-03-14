@@ -1,5 +1,6 @@
 const Project = require('../models/Project');
 const Task = require('../models/Task');
+const Message = require('../models/Message');
 
 async function createProject(req, res, next) {
     try {
@@ -75,8 +76,33 @@ async function getProjectSummary(req, res, next) {
     }
 }
 
+async function deleteProject(req, res, next) {
+    try {
+        const { projectId } = req.params;
+
+        const project = await Project.findOne({ _id: projectId, owner: req.user?.id });
+        if (!project) {
+            res.status(404);
+            throw new Error('Project not found.');
+        }
+
+        await Promise.all([
+            Task.deleteMany({ projectId: String(project._id) }),
+            Message.deleteMany({ projectId: String(project._id) }),
+            Project.deleteOne({ _id: project._id })
+        ]);
+
+        res.status(200).json({
+            message: 'Project deleted successfully.'
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     createProject,
     listProjects,
-    getProjectSummary
+    getProjectSummary,
+    deleteProject
 };

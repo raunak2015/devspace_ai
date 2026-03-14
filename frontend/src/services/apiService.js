@@ -85,4 +85,10 @@ function patch(path, payload) {
     });
 }
 
-export { get, post, patch };
+function del(path) {
+    return apiFetch(path, {
+        method: 'DELETE'
+    });
+}
+
+export { get, post, patch, del };
