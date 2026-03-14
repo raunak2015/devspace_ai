@@ -12,6 +12,8 @@ function TasksPage() {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 });
     const [addingTo, setAddingTo] = useState(null);
     const [newTitle, setNewTitle] = useState('');
     const [newDesc, setNewDesc] = useState('');
@@ -44,12 +46,29 @@ function TasksPage() {
         'Completed': isDark ? 'text-emerald-400' : 'text-emerald-700'
     };
 
+    async function loadTasks(targetPage, showLoader = true) {
+        if (showLoader) {
+            setLoading(true);
+        }
+
+        setError('');
+
+        try {
+            const data = await get(`/tasks/${projectId}?page=${targetPage}&limit=10`);
+            setTasks(data.tasks || []);
+            setPagination(data.pagination || { page: targetPage, totalPages: 1, total: 0, limit: 10 });
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            if (showLoader) {
+                setLoading(false);
+            }
+        }
+    }
+
     useEffect(() => {
-        get(`/tasks/${projectId}`)
-            .then(data => setTasks(data.tasks || []))
-            .catch(err => setError(err.message))
-            .finally(() => setLoading(false));
-    }, [projectId]);
+        loadTasks(page, true);
+    }, [projectId, page]);
 
     function openAddForm(status) {
         setAddingTo(status);
@@ -70,13 +89,19 @@ function TasksPage() {
         setCreating(true);
         setFormError('');
         try {
-            const data = await post('/tasks', {
+            await post('/tasks', {
                 title: newTitle.trim(),
                 description: newDesc.trim(),
                 status,
                 projectId
             });
-            setTasks(prev => [data.task, ...prev]);
+
+            if (page === 1) {
+                await loadTasks(1, false);
+            } else {
+                setPage(1);
+            }
+
             closeAddForm();
         } catch (err) {
             setFormError(err.message);
@@ -120,6 +145,12 @@ function TasksPage() {
 
         try {
             await del(`/tasks/${taskId}`);
+
+            if (previousTasks.length === 1 && page > 1) {
+                setPage((prev) => prev - 1);
+            } else {
+                await loadTasks(page, false);
+            }
         } catch (err) {
             setTasks(previousTasks);
             setError(err.message);
@@ -152,6 +183,30 @@ function TasksPage() {
 
                 {loading && <p className={subtitleClass}>Loading tasks…</p>}
                 {!loading && error && <p className="text-red-500">{error}</p>}
+
+                {!loading && !error && (
+                    <div className="mb-4 flex items-center justify-between rounded-xl border border-amber-200/40 px-4 py-2 text-xs sm:text-sm">
+                        <p className={subtitleClass}>Page {pagination.page} of {pagination.totalPages} · {pagination.total} tasks</p>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                                disabled={page <= 1}
+                                className={`${btnOutline} disabled:opacity-60`}
+                            >
+                                Prev
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages || 1))}
+                                disabled={page >= (pagination.totalPages || 1)}
+                                className={`${btnOutline} disabled:opacity-60`}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Kanban Board */}
                 {!loading && !error && (

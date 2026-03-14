@@ -11,10 +11,14 @@ function ChatPage() {
 
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(false);
     const [error, setError] = useState('');
     const [text, setText] = useState('');
     const [sending, setSending] = useState(false);
     const bottomRef = useRef(null);
+    const skipAutoScrollRef = useRef(false);
 
     const pageClass = isDark ? 'bg-stone-950 text-stone-100' : 'bg-amber-50 text-stone-900';
     const cardClass = isDark
@@ -39,18 +43,52 @@ function ChatPage() {
     const senderName = user?.name || user?.email || 'Anonymous';
 
     useEffect(() => {
-        get(`/messages/${projectId}`)
-            .then(data => {
+        get(`/messages/${projectId}?page=1&limit=20`)
+            .then((data) => {
                 const sorted = (data.messages || []).slice().reverse();
                 setMessages(sorted);
+                setPage(1);
+                setHasMore((data?.pagination?.page || 1) < (data?.pagination?.totalPages || 1));
             })
-            .catch(err => setError(err.message))
+            .catch((err) => setError(err.message))
             .finally(() => setLoading(false));
     }, [projectId]);
 
     useEffect(() => {
+        if (skipAutoScrollRef.current) {
+            skipAutoScrollRef.current = false;
+            return;
+        }
+
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    async function handleLoadOlder() {
+        if (!hasMore || loadingMore) return;
+
+        const nextPage = page + 1;
+        setLoadingMore(true);
+        setError('');
+
+        try {
+            const data = await get(`/messages/${projectId}?page=${nextPage}&limit=20`);
+            const olderMessages = (data.messages || []).slice().reverse();
+
+            skipAutoScrollRef.current = true;
+            setMessages((prev) => {
+                const existingIds = new Set(prev.map((item) => item._id));
+                const uniqueOlder = olderMessages.filter((item) => !existingIds.has(item._id));
+                return [...uniqueOlder, ...prev];
+            });
+
+            setPage(nextPage);
+            setHasMore((data?.pagination?.page || nextPage) < (data?.pagination?.totalPages || nextPage));
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoadingMore(false);
+        }
+    }
 
     async function handleSend(e) {
         e.preventDefault();
@@ -99,6 +137,16 @@ function ChatPage() {
                 <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3">
                     {loading && <p className={subtitleClass}>Loading messages…</p>}
                     {!loading && error && <p className="text-red-500">{error}</p>}
+                    {!loading && hasMore && (
+                        <button
+                            type="button"
+                            onClick={handleLoadOlder}
+                            disabled={loadingMore}
+                            className={`${btnOutline} mx-auto text-xs disabled:opacity-60`}
+                        >
+                            {loadingMore ? 'Loading older…' : 'Load older messages'}
+                        </button>
+                    )}
                     {!loading && !error && messages.length === 0 && (
                         <p className={`text-sm ${subtitleClass}`}>No messages yet — start the conversation!</p>
                     )}
