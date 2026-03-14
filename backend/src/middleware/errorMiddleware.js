@@ -7,9 +7,19 @@ function notFoundHandler(req, res, next) {
 function errorHandler(err, _req, res, _next) {
     const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
 
-    res.status(statusCode).json({
+    const payload = {
         message: err.message || 'Internal server error'
-    });
+    };
+
+    if (err.code) {
+        payload.code = err.code;
+    }
+
+    if (typeof err.retryAfterSeconds === 'number') {
+        payload.retryAfterSeconds = err.retryAfterSeconds;
+    }
+
+    res.status(statusCode).json(payload);
 }
 
 module.exports = {

@@ -8,6 +8,8 @@ function AIAssistantPage() {
 
     const [prompt, setPrompt] = useState('');
     const [response, setResponse] = useState('');
+    const [provider, setProvider] = useState('');
+    const [retryAfterSeconds, setRetryAfterSeconds] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -34,11 +36,15 @@ function AIAssistantPage() {
         setLoading(true);
         setError('');
         setResponse('');
+        setProvider('');
+        setRetryAfterSeconds(null);
         try {
             const data = await post('/ai/explain', { prompt: trimmed });
             setResponse(data.explanation || data.message || 'No response received.');
+            setProvider(data.provider || '');
         } catch (err) {
             setError(err.message);
+            setRetryAfterSeconds(err.retryAfterSeconds || null);
         } finally {
             setLoading(false);
         }
@@ -84,6 +90,11 @@ function AIAssistantPage() {
                 {error && (
                     <div className="mt-6 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3">
                         <p className="text-sm text-red-500">{error}</p>
+                        {retryAfterSeconds && (
+                            <p className={`mt-1.5 text-xs ${subtitleClass}`}>
+                                Retry after approximately {retryAfterSeconds} seconds.
+                            </p>
+                        )}
                         {(error.toLowerCase().includes('not configured') || error.toLowerCase().includes('ai provider')) && (
                             <p className={`mt-1.5 text-xs ${subtitleClass}`}>
                                 Set <code className="font-mono">AI_PROVIDER</code> and{' '}
@@ -97,7 +108,12 @@ function AIAssistantPage() {
                 {/* Response */}
                 {response && (
                     <div className="mt-6">
-                        <h2 className={`text-xs uppercase tracking-wide mb-2 ${subtitleClass}`}>Response</h2>
+                        <div className="mb-2 flex items-center justify-between gap-3">
+                            <h2 className={`text-xs uppercase tracking-wide ${subtitleClass}`}>Response</h2>
+                            {provider && (
+                                <span className={`text-[11px] ${subtitleClass}`}>Provider: {provider}</span>
+                            )}
+                        </div>
                         <div className={responseClass}>{response}</div>
                     </div>
                 )}

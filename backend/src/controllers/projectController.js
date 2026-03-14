@@ -100,9 +100,42 @@ async function deleteProject(req, res, next) {
     }
 }
 
+async function updateProjectMembers(req, res, next) {
+    try {
+        const { projectId } = req.params;
+        const { members } = req.body;
+
+        if (!Array.isArray(members)) {
+            res.status(400);
+            throw new Error('Members must be an array of emails.');
+        }
+
+        const sanitizedMembers = members
+            .map((member) => String(member).trim())
+            .filter(Boolean);
+
+        const project = await Project.findOne({ _id: projectId, owner: req.user?.id });
+        if (!project) {
+            res.status(404);
+            throw new Error('Project not found.');
+        }
+
+        project.members = sanitizedMembers;
+        await project.save();
+
+        res.status(200).json({
+            message: 'Project members updated successfully.',
+            project
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     createProject,
     listProjects,
     getProjectSummary,
-    deleteProject
+    deleteProject,
+    updateProjectMembers
 };

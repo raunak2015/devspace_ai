@@ -14,9 +14,12 @@ function TasksPage() {
     const [error, setError] = useState('');
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 });
+    const [searchTerm, setSearchTerm] = useState('');
     const [addingTo, setAddingTo] = useState(null);
     const [newTitle, setNewTitle] = useState('');
     const [newDesc, setNewDesc] = useState('');
+    const [newAssignee, setNewAssignee] = useState('');
+    const [newDeadline, setNewDeadline] = useState('');
     const [creating, setCreating] = useState(false);
     const [formError, setFormError] = useState('');
     const [updatingTaskId, setUpdatingTaskId] = useState('');
@@ -74,6 +77,8 @@ function TasksPage() {
         setAddingTo(status);
         setNewTitle('');
         setNewDesc('');
+        setNewAssignee('');
+        setNewDeadline('');
         setFormError('');
     }
 
@@ -81,6 +86,8 @@ function TasksPage() {
         setAddingTo(null);
         setNewTitle('');
         setNewDesc('');
+        setNewAssignee('');
+        setNewDeadline('');
         setFormError('');
     }
 
@@ -92,6 +99,8 @@ function TasksPage() {
             await post('/tasks', {
                 title: newTitle.trim(),
                 description: newDesc.trim(),
+                assignedTo: newAssignee.trim(),
+                deadline: newDeadline || null,
                 status,
                 projectId
             });
@@ -159,7 +168,30 @@ function TasksPage() {
         }
     }
 
-    const tasksByStatus = status => tasks.filter(t => t.status === status);
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    const tasksByStatus = status => tasks.filter((task) => {
+        if (task.status !== status) {
+            return false;
+        }
+
+        if (!normalizedSearch) {
+            return true;
+        }
+
+        const haystack = [task.title, task.description, task.assignedTo]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+
+        return haystack.includes(normalizedSearch);
+    });
+
+    const formatDeadline = (value) => {
+        if (!value) return '';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '';
+        return date.toLocaleDateString();
+    };
 
     return (
         <div className={`min-h-screen px-4 py-8 font-serif ${pageClass}`}>
@@ -179,6 +211,16 @@ function TasksPage() {
                             ← Projects
                         </Link>
                     </div>
+                </div>
+
+                <div className="mb-4">
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search tasks, descriptions, or assignee"
+                        className={inputClass}
+                    />
                 </div>
 
                 {loading && <p className={subtitleClass}>Loading tasks…</p>}
@@ -227,6 +269,12 @@ function TasksPage() {
                                         {task.description && (
                                             <p className={`mt-1 text-xs ${subtitleClass}`}>{task.description}</p>
                                         )}
+                                        {task.assignedTo && (
+                                            <p className={`mt-1 text-xs ${subtitleClass}`}>Assigned to {task.assignedTo}</p>
+                                        )}
+                                        {task.deadline && (
+                                            <p className={`mt-1 text-xs ${subtitleClass}`}>Due {formatDeadline(task.deadline)}</p>
+                                        )}
                                         {status !== 'Completed' && (
                                             <button
                                                 onClick={() => moveTaskNext(task._id, status)}
@@ -263,6 +311,19 @@ function TasksPage() {
                                             value={newDesc}
                                             onChange={e => setNewDesc(e.target.value)}
                                             placeholder="Description (optional)"
+                                            className={`${inputClass} mb-2`}
+                                        />
+                                        <input
+                                            type="text"
+                                            value={newAssignee}
+                                            onChange={e => setNewAssignee(e.target.value)}
+                                            placeholder="Assignee (optional)"
+                                            className={`${inputClass} mb-2`}
+                                        />
+                                        <input
+                                            type="date"
+                                            value={newDeadline}
+                                            onChange={e => setNewDeadline(e.target.value)}
                                             className={`${inputClass} mb-2`}
                                         />
                                         {formError && <p className="mb-1.5 text-xs text-red-500">{formError}</p>}

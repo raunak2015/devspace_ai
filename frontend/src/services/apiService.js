@@ -59,7 +59,11 @@ async function apiFetch(path, options = {}) {
             throw new Error('Session expired. Please log in again.');
         }
 
-        throw new Error(message);
+        const error = new Error(message);
+        error.statusCode = response.status;
+        error.code = data?.code || '';
+        error.retryAfterSeconds = data?.retryAfterSeconds;
+        throw error;
     }
 
     return data;
