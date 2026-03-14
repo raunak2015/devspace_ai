@@ -1,0 +1,175 @@
+import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import LampIllustration from '../components/LampIllustration';
+
+function LoginPage() {
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [lampOn, setLampOn] = useState(false);
+  const [threadPulled, setThreadPulled] = useState(false);
+  const emailRef = useRef(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login, isAuthenticated } = useAuth();
+  const { isDark } = useTheme();
+
+  useEffect(() => {
+    if (lampOn) {
+      emailRef.current?.focus();
+    }
+  }, [lampOn]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError('');
+
+    if (!formData.email.trim() || !formData.password.trim()) {
+      setError('Email and password are required.');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      login({
+        name: 'DevSpace User',
+        email: formData.email.trim()
+      });
+
+      const redirectTo = location.state?.from?.pathname || '/dashboard';
+      navigate(redirectTo, { replace: true });
+    } catch {
+      setError('Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePullThread = () => {
+    setThreadPulled(true);
+    setLampOn((prev) => !prev);
+
+    setTimeout(() => {
+      setThreadPulled(false);
+    }, 260);
+  };
+
+  const pageClass = isDark
+    ? 'bg-[#0b1020] text-slate-100'
+    : 'bg-[#d8e2fb] text-slate-900';
+  const overlayClass = isDark
+    ? 'bg-[radial-gradient(circle_at_50%_-10%,rgba(248,229,145,0.16),transparent_30%),radial-gradient(circle_at_10%_80%,rgba(62,80,128,0.22),transparent_28%),radial-gradient(circle_at_88%_22%,rgba(33,53,95,0.2),transparent_30%)]'
+    : 'bg-[radial-gradient(circle_at_50%_-10%,rgba(255,231,150,0.28),transparent_30%),radial-gradient(circle_at_10%_80%,rgba(128,150,196,0.28),transparent_28%),radial-gradient(circle_at_88%_22%,rgba(138,162,212,0.28),transparent_30%)]';
+  const headingClass = isDark ? 'text-amber-300' : 'text-amber-700';
+  const captionClass = isDark ? 'text-slate-300' : 'text-slate-700';
+  const cardClass = isDark
+    ? 'border-blue-400/30 bg-gradient-to-b from-slate-900/90 to-slate-950/95 shadow-[0_0_0_1px_rgba(104,148,255,0.18),0_0_32px_rgba(70,131,255,0.35)]'
+    : 'border-blue-500/30 bg-gradient-to-b from-slate-50/95 to-blue-50/95 shadow-[0_0_0_1px_rgba(52,99,204,0.18),0_0_24px_rgba(66,114,220,0.24)]';
+  const titleClass = isDark ? 'text-slate-50' : 'text-slate-800';
+  const labelClass = isDark ? 'text-slate-200' : 'text-slate-700';
+  const inputClass = isDark
+    ? 'border-blue-300/20 bg-slate-950/70 text-slate-100 placeholder:text-slate-500 focus:border-blue-400 focus:ring-blue-400/20'
+    : 'border-blue-700/20 bg-white/90 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20';
+  const helperClass = isDark ? 'text-slate-400' : 'text-slate-600';
+  const linkClass = isDark ? 'text-amber-300 hover:text-amber-200' : 'text-amber-700 hover:text-amber-800';
+
+  return (
+    <div className={`relative min-h-screen overflow-hidden px-4 py-10 font-serif transition-colors duration-300 ${pageClass}`}>
+      <div className={`pointer-events-none absolute inset-0 ${overlayClass}`} />
+      <div className="relative mx-auto w-full max-w-6xl animate-[fadeIn_.4s_ease-out]">
+        <h1 className={`mb-6 text-center text-4xl tracking-wide md:text-6xl ${headingClass}`}>
+          Login page
+        </h1>
+
+        <div className="grid items-center gap-8 md:grid-cols-[0.95fr_1fr]">
+          <div className="flex min-h-[360px] flex-col items-center justify-center">
+            <LampIllustration lampOn={lampOn} threadPulled={threadPulled} onPull={handlePullThread} />
+
+            <p className={`mt-3 text-center font-medium ${captionClass}`}>
+              {lampOn ? 'Pull the thread again to hide login details.' : 'Pull the thread to reveal login details.'}
+            </p>
+          </div>
+
+          <div
+            className={`rounded-2xl border p-6 transition duration-300 md:p-8 ${cardClass} ${lampOn ? 'translate-y-0 scale-100 opacity-100' : 'pointer-events-none translate-y-6 scale-95 opacity-0'
+              }`}
+          >
+            <h2 className={`text-4xl font-bold ${titleClass}`}>Welcome Back</h2>
+
+            <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+              <div>
+                <label htmlFor="email" className={`mb-1 block text-sm font-medium ${labelClass}`}>
+                  Email
+                </label>
+                <input
+                  ref={emailRef}
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className={`w-full rounded-lg border px-3 py-2 outline-none ring-0 transition focus:ring-4 ${inputClass}`}
+                  placeholder="you@example.com"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className={`mb-1 block text-sm font-medium ${labelClass}`}>
+                  Password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={`w-full rounded-lg border px-3 py-2 outline-none ring-0 transition focus:ring-4 ${inputClass}`}
+                  placeholder="Enter your password"
+                />
+              </div>
+
+              {error ? <p className="text-sm text-rose-400">{error}</p> : null}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-lg border border-blue-400 bg-gradient-to-b from-blue-400 to-blue-600 px-3 py-2 font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-[0_10px_18px_rgba(67,131,255,0.28)] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {loading ? 'Logging in...' : 'Login'}
+              </button>
+            </form>
+
+            <p className={`mt-4 text-sm ${helperClass}`}>
+              Don&apos;t have an account?{' '}
+              <Link className={`font-semibold ${linkClass}`} to="/signup">
+                Go to Signup
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default LoginPage;
