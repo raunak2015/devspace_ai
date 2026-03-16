@@ -264,11 +264,19 @@ async function explainCode(req, res, next) {
         });
     } catch (error) {
         if (error?.isGeminiQuotaError || error?.isOpenAIQuotaError) {
+            const retryAfterSeconds = error?.retryAfterSeconds || 60;
+
             if (res.statusCode < 400) {
                 res.status(429);
             }
 
-            return next(new Error('AI quota exceeded for configured providers. Please retry later or upgrade billing plan.'));
+            res.setHeader('Retry-After', String(retryAfterSeconds));
+
+            const quotaError = new Error('AI quota exceeded for configured providers. Please retry later or upgrade billing plan.');
+            quotaError.code = 'AI_QUOTA_EXCEEDED';
+            quotaError.retryAfterSeconds = retryAfterSeconds;
+
+            return next(quotaError);
         }
 
         next(error);

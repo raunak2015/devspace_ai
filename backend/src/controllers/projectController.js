@@ -1,6 +1,39 @@
 const Project = require('../models/Project');
 const Task = require('../models/Task');
 const Message = require('../models/Message');
+const User = require('../models/User');
+
+function normalizeEmail(value) {
+    return String(value || '').trim().toLowerCase();
+}
+
+function sanitizeMembers(members) {
+    return [...new Set((members || []).map((member) => normalizeEmail(member)).filter(Boolean))];
+}
+
+function escapeRegExp(text) {
+    return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getAccessibleProjectFilter(user) {
+    const ownerId = String(user?.id || '').trim();
+    const userEmail = normalizeEmail(user?.email);
+
+    if (!ownerId) {
+        return { _id: null };
+    }
+
+    if (!userEmail) {
+        return { owner: ownerId };
+    }
+
+    return {
+        $or: [
+            { owner: ownerId },
+            { members: { $regex: `^${escapeRegExp(userEmail)}$`, $options: 'i' } }
+        ]
+    };
+}
 
 async function createProject(req, res, next) {
     try {
@@ -15,7 +48,7 @@ async function createProject(req, res, next) {
         const project = await Project.create({
             name: String(name).trim(),
             owner: String(owner).trim(),
-            members: Array.isArray(members) ? members : []
+            members: sanitizeMembers(Array.isArray(members) ? members : [])
         });
 
         res.status(201).json({
@@ -29,10 +62,26 @@ async function createProject(req, res, next) {
 
 async function listProjects(_req, res, next) {
     try {
-        const projects = await Project.find({ owner: _req.user?.id }).sort({ createdAt: -1 });
+        const filter = getAccessibleProjectFilter(_req.user);
+        const projects = await Project.find(filter).sort({ createdAt: -1 });
+
+        const ownerIds = [...new Set(projects.map((project) => String(project.owner || '')).filter(Boolean))];
+        const owners = await User.find({ _id: { $in: ownerIds } }).select('_id name email');
+        const ownerById = new Map(owners.map((owner) => [String(owner._id), owner]));
+
+        const enrichedProjects = projects.map((project) => {
+            const rawProject = project.toObject();
+            const owner = ownerById.get(String(project.owner || ''));
+
+            return {
+                ...rawProject,
+                ownerName: owner?.name || '',
+                ownerEmail: owner?.email || ''
+            };
+        });
 
         res.status(200).json({
-            projects
+            projects: enrichedProjects
         });
     } catch (error) {
         next(error);
@@ -41,8 +90,8 @@ async function listProjects(_req, res, next) {
 
 async function getProjectSummary(req, res, next) {
     try {
-        const ownerId = req.user?.id;
-        const projects = await Project.find({ owner: ownerId }).select('_id');
+        const filter = getAccessibleProjectFilter(req.user);
+        const projects = await Project.find(filter).select('_id');
         const projectIds = projects.map((project) => String(project._id));
 
         const totalProjects = projectIds.length;
@@ -100,9 +149,42 @@ async function deleteProject(req, res, next) {
     }
 }
 
+async function updateProjectMembers(req, res, next) {
+    try {
+        const { projectId } = req.params;
+        const { members } = req.body;
+
+        if (!Array.isArray(members)) {
+            res.status(400);
+            throw new Error('Members must be an array of emails.');
+        }
+
+        const sanitizedMembers = members
+            .map((member) => String(member).trim())
+            .filter(Boolean);
+
+        const project = await Project.findOne({ _id: projectId, owner: req.user?.id });
+        if (!project) {
+            res.status(404);
+            throw new Error('Project not found.');
+        }
+
+        project.members = sanitizeMembers(sanitizedMembers);
+        await project.save();
+
+        res.status(200).json({
+            message: 'Project members updated successfully.',
+            project
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     createProject,
     listProjects,
     getProjectSummary,
-    deleteProject
+    deleteProject,
+    updateProjectMembers
 };

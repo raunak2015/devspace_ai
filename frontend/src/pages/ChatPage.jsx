@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { get, post } from '../services/apiService';
+import { del, get, post } from '../services/apiService';
 
 function ChatPage() {
     const { projectId } = useParams();
@@ -14,9 +14,11 @@ function ChatPage() {
     const [loadingMore, setLoadingMore] = useState(false);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(false);
+    const [project, setProject] = useState(null);
     const [error, setError] = useState('');
     const [text, setText] = useState('');
     const [sending, setSending] = useState(false);
+    const [deletingMessageId, setDeletingMessageId] = useState('');
     const bottomRef = useRef(null);
     const skipAutoScrollRef = useRef(false);
 
@@ -41,18 +43,33 @@ function ChatPage() {
     const dividerClass = isDark ? 'border-stone-700' : 'border-amber-200';
 
     const senderName = user?.name || user?.email || 'Anonymous';
+    const senderEmail = user?.email || '';
 
     useEffect(() => {
-        get(`/messages/${projectId}?page=1&limit=20`)
-            .then((data) => {
-                const sorted = (data.messages || []).slice().reverse();
+        setLoading(true);
+        setError('');
+
+        Promise.all([
+            get(`/messages/${projectId}?page=1&limit=20`),
+            get('/projects')
+        ])
+            .then(([messagesData, projectsData]) => {
+                const sorted = (messagesData.messages || []).slice().reverse();
                 setMessages(sorted);
                 setPage(1);
-                setHasMore((data?.pagination?.page || 1) < (data?.pagination?.totalPages || 1));
+                setHasMore((messagesData?.pagination?.page || 1) < (messagesData?.pagination?.totalPages || 1));
+
+                const matchedProject = (projectsData.projects || []).find((item) => item._id === projectId) || null;
+                setProject(matchedProject);
             })
             .catch((err) => setError(err.message))
             .finally(() => setLoading(false));
     }, [projectId]);
+
+    const ownerLabel = project
+        ? (project.ownerName || project.ownerEmail || project.owner || 'Unknown')
+        : 'Loading...';
+    const memberList = Array.isArray(project?.members) ? project.members : [];
 
     useEffect(() => {
         if (skipAutoScrollRef.current) {
@@ -110,6 +127,23 @@ function ChatPage() {
         }
     }
 
+    async function handleDeleteMessage(messageId) {
+        const confirmed = window.confirm('Delete this message?');
+        if (!confirmed) return;
+
+        setDeletingMessageId(messageId);
+        setError('');
+
+        try {
+            await del(`/messages/${messageId}`);
+            setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setDeletingMessageId('');
+        }
+    }
+
     function handleKeyDown(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -125,9 +159,13 @@ function ChatPage() {
                 <div className={`flex flex-wrap items-center justify-between px-6 py-4 border-b gap-3 ${dividerClass}`}>
                     <div>
                         <h1 className="text-xl font-semibold">Project Chat</h1>
-                        <p className={`text-xs mt-0.5 truncate max-w-xs ${subtitleClass}`}>{projectId}</p>
+                        <p className={`text-xs mt-0.5 ${subtitleClass}`}>Leader: {ownerLabel}</p>
+                        <p className={`text-xs mt-0.5 truncate max-w-md ${subtitleClass}`}>
+                            Members: {memberList.length > 0 ? memberList.join(', ') : 'No members added'}
+                        </p>
                     </div>
                     <div className="flex gap-2">
+                        <Link to={`/projects/${projectId}/files`} className={btnOutline}>Code</Link>
                         <Link to={`/projects/${projectId}/tasks`} className={btnOutline}>Tasks</Link>
                         <Link to="/projects" className={btnOutline}>← Projects</Link>
                     </div>
@@ -151,16 +189,35 @@ function ChatPage() {
                         <p className={`text-sm ${subtitleClass}`}>No messages yet — start the conversation!</p>
                     )}
                     {messages.map(msg => {
-                        const isMe = msg.sender === senderName;
+                        const messageSender = String(msg.sender || '').trim();
+                        const normalizedSender = messageSender.toLowerCase();
+                        const isMe = normalizedSender === senderName.toLowerCase() || (senderEmail && normalizedSender === senderEmail.toLowerCase());
+
+                        const senderLabel = isMe ? `${messageSender || 'You'} (You)` : (messageSender || 'Unknown sender');
+                        const fullDateTime = new Date(msg.createdAt).toLocaleString([], {
+                            year: 'numeric',
+                            month: 'short',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
                         return (
                             <div key={msg._id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                                {!isMe && (
-                                    <span className={`text-xs mb-0.5 ${subtitleClass}`}>{msg.sender}</span>
-                                )}
+                                <span className={`text-xs mb-0.5 ${subtitleClass}`}>{senderLabel}</span>
                                 <div className={isMe ? bubbleMine : bubbleOther}>{msg.message}</div>
                                 <span className={`text-xs mt-0.5 ${subtitleClass}`}>
-                                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {fullDateTime}
                                 </span>
+                                {isMe && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDeleteMessage(msg._id)}
+                                        disabled={deletingMessageId === msg._id}
+                                        className={`mt-1 text-[10px] uppercase tracking-wide ${subtitleClass} hover:text-red-500 disabled:opacity-60`}
+                                    >
+                                        {deletingMessageId === msg._id ? 'Deleting…' : 'Delete'}
+                                    </button>
+                                )}
                             </div>
                         );
                     })}
