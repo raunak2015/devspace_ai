@@ -9,7 +9,10 @@ function getEnvConfig() {
         aiApiKeySecondary: process.env.AI_API_KEY_SECONDARY || '',
         openAiApiKey: process.env.OPENAI_API_KEY || '',
         openAiModel: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-        geminiModel: process.env.GEMINI_MODEL || 'gemini-2.0-flash'
+        geminiModel: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+        emailService: process.env.EMAIL_SERVICE || 'gmail',
+        emailUser: process.env.EMAIL_USER || '',
+        emailPass: process.env.EMAIL_PASS || ''
     };
 }
 
