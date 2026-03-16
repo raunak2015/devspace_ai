@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DevSpace Project Dashboard v2</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2b2bee",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101022",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(43, 43, 238, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(43, 43, 238, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .neon-text {
+            text-shadow: 0 0 10px rgba(43, 43, 238, 0.5), 0 0 20px rgba(43, 43, 238, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display selection:bg-primary/30 min-h-screen">
+<div class="relative flex h-screen w-full flex-col overflow-hidden">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-primary/20 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md px-10 py-4 z-10 shrink-0 shadow-lg shadow-primary/5">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-primary">
+<div class="material-symbols-outlined text-3xl drop-shadow-[0_0_8px_rgba(43,43,238,0.5)]">hexagon</div>
+<h2 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] neon-text">DevSpace</h2>
+</div>
+<label class="flex flex-col min-w-40 h-10 max-w-md w-96 relative group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500 group-focus-within:text-primary transition-colors">
+<span class="material-symbols-outlined text-xl">search</span>
+</div>
+<input class="form-input flex w-full h-full pl-10 pr-4 py-2 bg-slate-200/50 dark:bg-slate-800/50 border border-transparent focus:border-primary/50 focus:ring-1 focus:ring-primary/50 rounded-full text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-500 transition-all shadow-inner" placeholder="Search projects, files, or teammates..." type="text"/>
+</label>
+</div>
+<div class="flex items-center gap-6">
+<button class="relative text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">notifications</span>
+<span class="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-background-dark"></span>
+</button>
+<div class="flex items-center gap-3 cursor-pointer group">
+<div class="h-10 w-10 rounded-full bg-primary/20 border border-primary/50 overflow-hidden flex items-center justify-center group-hover:ring-2 ring-primary/50 transition-all">
+<img alt="User Profile" class="h-full w-full object-cover" data-alt="Abstract colorful geometric portrait avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJR0H1awnG68qw-MHjqidODFkuDGucSVoD9WAGhgZmqRSCdHjMhs8fE7q3Ll7pCo5b4-4oETezEOd9SNMX3fIGLeg3ZicJyV1_RWLU4z-Ncpfl5BAXTlbSCIrqEWb_cSA8hKoDgWNEyHoloveX6UTIcgZ973hQglSmtLw2ppB0gTV2hOlOAHx9xxlLBysbhDK5QI960T4Yf_HHW7eV0F4X6GRVvV1b4DZEciXpZo81lz4txchtb6yLMtsVjcVUMmMWDTGQJJAMV2E"/>
+</div>
+<div class="hidden md:block">
+<p class="text-sm font-semibold dark:text-white text-slate-800">Alex Chen</p>
+<p class="text-xs text-slate-500">Lead Developer</p>
+</div>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden relative">
+<!-- Sidebar -->
+<aside class="w-64 flex-shrink-0 flex flex-col justify-between border-r border-primary/20 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-sm p-4 h-full overflow-y-auto z-0">
+<div class="flex flex-col gap-8">
+<div class="flex gap-3 items-center px-2 pt-2">
+<div class="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-primary/30">
+<span class="material-symbols-outlined text-2xl">hub</span>
+</div>
+<div class="flex flex-col">
+<h1 class="text-slate-900 dark:text-white text-base font-bold leading-tight">Engineering</h1>
+<p class="text-slate-500 text-xs font-medium">Core Team Workspace</p>
+</div>
+</div>
+<nav class="flex flex-col gap-1.5">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/20 text-primary font-semibold border border-primary/30 shadow-[0_0_15px_rgba(43,43,238,0.15)] relative overflow-hidden" href="#">
+<div class="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/10 to-primary/0 translate-x-[-100%] animate-[shimmer_2s_infinite]"></div>
+<span class="material-symbols-outlined text-[20px]">folder_special</span>
+<span class="text-sm">Projects</span>
+<span class="ml-auto bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">12</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">task_alt</span>
+<span class="text-sm font-medium">Tasks</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">terminal</span>
+<span class="text-sm font-medium">Code &amp; Repos</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">forum</span>
+<span class="text-sm font-medium">Chat</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all group mt-4" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">analytics</span>
+<span class="text-sm font-medium">Analytics</span>
+</a>
+</nav>
+</div>
+<div class="mt-8 px-2 pb-2">
+<div class="rounded-xl p-4 bg-gradient-to-b from-slate-800/50 to-slate-900/50 border border-slate-700/50 flex flex-col gap-3">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-lg">rocket_launch</span>
+<span class="text-sm font-bold">Pro Plan</span>
+</div>
+<div class="w-full bg-slate-700/50 rounded-full h-1.5">
+<div class="bg-primary h-1.5 rounded-full" style="width: 75%"></div>
+</div>
+<p class="text-xs text-slate-400">75% storage used</p>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto p-8 relative">
+<!-- Background decorative elements -->
+<div class="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+<div class="absolute bottom-0 left-1/4 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-[80px] pointer-events-none"></div>
+<div class="max-w-6xl mx-auto flex flex-col gap-8 relative z-10">
+<div class="flex items-center justify-between pb-4 border-b border-primary/10">
+<div>
+<h2 class="text-slate-900 dark:text-white text-3xl font-bold tracking-tight">Active Projects</h2>
+<p class="text-slate-500 mt-1">Manage and track your ongoing initiatives.</p>
+</div>
+<button class="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-[0_0_15px_rgba(43,43,238,0.4)] hover:shadow-[0_0_20px_rgba(43,43,238,0.6)] hover:-translate-y-0.5">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                            New Project
+                        </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Project Card 1 -->
+<div class="glass-card rounded-2xl p-6 flex flex-col gap-5 hover:-translate-y-1 transition-transform duration-300 group">
+<div class="flex justify-between items-start">
+<div class="h-12 w-12 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center border border-blue-500/30">
+<span class="material-symbols-outlined text-2xl">web</span>
+</div>
+<div class="flex items-center gap-1 bg-green-500/10 text-green-400 px-2.5 py-1 rounded-full text-xs font-semibold border border-green-500/20">
+<span class="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                                    On Track
+                                </div>
+</div>
+<div class="flex flex-col gap-1">
+<h3 class="text-xl font-bold dark:text-white text-slate-800 group-hover:text-primary transition-colors">Frontend Migration</h3>
+<p class="text-sm text-slate-400">Migrating legacy React codebase to Next.js App Router.</p>
+</div>
+<div class="flex items-center gap-4 text-xs text-slate-500 font-medium">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">calendar_month</span>
+                                    Created Oct 20
+                                </span>
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">person</span>
+                                    4 Members
+                                </span>
+</div>
+<div class="mt-2 pt-4 border-t border-slate-700/50 flex gap-2">
+<button class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 transition-all text-sm font-medium">
+<span class="material-symbols-outlined text-[18px]">list_alt</span>
+                                    Tasks
+                                </button>
+<button class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-slate-600/50 text-slate-300 hover:bg-slate-800/50 hover:border-slate-500 transition-all text-sm font-medium">
+<span class="material-symbols-outlined text-[18px]">code</span>
+                                    Code
+                                </button>
+<button class="flex items-center justify-center w-10 h-10 rounded-lg border border-slate-600/50 text-slate-300 hover:bg-slate-800/50 hover:border-slate-500 transition-all">
+<span class="material-symbols-outlined text-[18px]">chat_bubble</span>
+</button>
+</div>
+</div>
+<!-- Project Card 2 -->
+<div class="glass-card rounded-2xl p-6 flex flex-col gap-5 hover:-translate-y-1 transition-transform duration-300 group">
+<div class="flex justify-between items-start">
+<div class="h-12 w-12 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center border border-purple-500/30">
+<span class="material-symbols-outlined text-2xl">api</span>
+</div>
+<div class="flex items-center gap-1 bg-yellow-500/10 text-yellow-400 px-2.5 py-1 rounded-full text-xs font-semibold border border-yellow-500/20">
+<span class="h-1.5 w-1.5 rounded-full bg-yellow-400"></span>
+                                    At Risk
+                                </div>
+</div>
+<div class="flex flex-col gap-1">
+<h3 class="text-xl font-bold dark:text-white text-slate-800 group-hover:text-primary transition-colors">API Gateway V2</h3>
+<p class="text-sm text-slate-400">Implementing rate limiting and GraphQL federation.</p>
+</div>
+<div class="flex items-center gap-4 text-xs text-slate-500 font-medium">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">calendar_month</span>
+                                    Created Oct 22
+                                </span>
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">person</span>
+                                    6 Members
+                                </span>
+</div>
+<div class="mt-2 pt-4 border-t border-slate-700/50 flex gap-2">
+<button class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-slate-600/50 text-slate-300 hover:bg-slate-800/50 hover:border-slate-500 transition-all text-sm font-medium">
+<span class="material-symbols-outlined text-[18px]">list_alt</span>
+                                    Tasks
+                                </button>
+<button class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 transition-all text-sm font-medium">
+<span class="material-symbols-outlined text-[18px]">code</span>
+                                    Code
+                                </button>
+<button class="flex items-center justify-center w-10 h-10 rounded-lg border border-slate-600/50 text-slate-300 hover:bg-slate-800/50 hover:border-slate-500 transition-all">
+<span class="material-symbols-outlined text-[18px]">chat_bubble</span>
+</button>
+</div>
+</div>
+<!-- Project Card 3 (Empty State / New) -->
+<div class="rounded-2xl p-6 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-slate-700/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer min-h-[250px] group">
+<div class="h-14 w-14 rounded-full bg-slate-800/50 text-slate-400 flex items-center justify-center group-hover:text-primary group-hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-3xl">add_circle</span>
+</div>
+<p class="text-slate-400 font-medium group-hover:text-slate-300">Create New Project</p>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+</body></html>

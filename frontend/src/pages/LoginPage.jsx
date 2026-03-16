@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import LampIllustration from '../components/LampIllustration';
 
 function LoginPage() {
@@ -14,7 +13,6 @@ function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated } = useAuth();
-  const { isDark } = useTheme();
   const signupMessage = location.state?.signupMessage || '';
 
   useEffect(() => {
@@ -74,55 +72,61 @@ function LoginPage() {
     }, 260);
   };
 
-  const pageClass = isDark
-    ? 'bg-[#0b1020] text-slate-100'
-    : 'bg-[#d8e2fb] text-slate-900';
-  const overlayClass = isDark
-    ? 'bg-[radial-gradient(circle_at_50%_-10%,rgba(248,229,145,0.16),transparent_30%),radial-gradient(circle_at_10%_80%,rgba(62,80,128,0.22),transparent_28%),radial-gradient(circle_at_88%_22%,rgba(33,53,95,0.2),transparent_30%)]'
-    : 'bg-[radial-gradient(circle_at_50%_-10%,rgba(255,231,150,0.28),transparent_30%),radial-gradient(circle_at_10%_80%,rgba(128,150,196,0.28),transparent_28%),radial-gradient(circle_at_88%_22%,rgba(138,162,212,0.28),transparent_30%)]';
-  const headingClass = isDark ? 'text-amber-300' : 'text-amber-700';
-  const captionClass = isDark ? 'text-slate-300' : 'text-slate-700';
-  const cardClass = isDark
-    ? 'border-blue-400/30 bg-gradient-to-b from-slate-900/90 to-slate-950/95 shadow-[0_0_0_1px_rgba(104,148,255,0.18),0_0_32px_rgba(70,131,255,0.35)]'
-    : 'border-blue-500/30 bg-gradient-to-b from-slate-50/95 to-blue-50/95 shadow-[0_0_0_1px_rgba(52,99,204,0.18),0_0_24px_rgba(66,114,220,0.24)]';
-  const titleClass = isDark ? 'text-slate-50' : 'text-slate-800';
-  const labelClass = isDark ? 'text-slate-200' : 'text-slate-700';
-  const inputClass = isDark
-    ? 'border-blue-300/20 bg-slate-950/70 text-slate-100 placeholder:text-slate-500 focus:border-blue-400 focus:ring-blue-400/20'
-    : 'border-blue-700/20 bg-white/90 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20';
-  const helperClass = isDark ? 'text-slate-400' : 'text-slate-600';
-  const linkClass = isDark ? 'text-amber-300 hover:text-amber-200' : 'text-amber-700 hover:text-amber-800';
+  const pageClass = 'bg-[#020617] text-white';
+  const overlayClass = 'bg-[radial-gradient(circle_at_50%_-10%,rgba(59,130,246,0.1),transparent_30%),radial-gradient(circle_at_10%_80%,rgba(37,99,235,0.05),transparent_28%)]';
+  const cardClass = 'border-slate-800 bg-[#0f172a]/95 shadow-2xl backdrop-blur-md';
+  const labelClass = 'text-slate-400 font-bold uppercase tracking-widest text-[10px]';
+  const inputClass = 'border-slate-800 bg-[#020617] text-white placeholder:text-slate-600 focus:border-blue-500/50 focus:ring-blue-500/10 shadow-inner';
+  const helperClass = 'text-slate-500';
+  const linkClass = 'text-blue-400 hover:text-blue-300 transition-colors';
 
   return (
-    <div className={`relative min-h-screen overflow-hidden px-4 py-10 font-serif transition-colors duration-300 ${pageClass}`}>
+    <div className={`relative min-h-screen overflow-hidden px-4 py-10 font-display transition-colors duration-300 ${pageClass}`}>
       <div className={`pointer-events-none absolute inset-0 ${overlayClass}`} />
-      <div className="relative mx-auto w-full max-w-6xl animate-[fadeIn_.4s_ease-out]">
-        <h1 className={`mb-6 text-center text-4xl tracking-wide md:text-6xl ${headingClass}`}>
-          Login page
-        </h1>
+      
+      {/* Decorative background grid */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]"></div>
 
-        <div className="grid items-center gap-8 md:grid-cols-[0.95fr_1fr]">
-          <div className="flex min-h-[360px] flex-col items-center justify-center">
-            <LampIllustration lampOn={lampOn} threadPulled={threadPulled} onPull={handlePullThread} />
+      <div className="relative mx-auto w-full max-w-6xl z-10">
+        <div className="flex flex-col items-center mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
+            <div className="h-12 w-12 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-4">
+                <span className="material-symbols-outlined text-blue-500 text-2xl">hexagon</span>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white uppercase italic">
+              Authorization <span className="text-blue-500">Node</span>
+            </h1>
+        </div>
 
-            <p className={`mt-3 text-center font-medium ${captionClass}`}>
-              {lampOn ? 'Pull the thread again to hide login details.' : 'Pull the thread to reveal login details.'}
+        <div className="grid items-center gap-12 md:grid-cols-[1fr_1.1fr]">
+          <div className="flex min-h-[400px] flex-col items-center justify-center animate-in fade-in slide-in-from-left-8 duration-1000">
+            <div className="p-8 rounded-full bg-blue-600/5 border border-blue-600/10 relative">
+                <div className="absolute inset-0 bg-blue-600/10 rounded-full blur-[40px]"></div>
+                <LampIllustration lampOn={lampOn} threadPulled={threadPulled} onPull={handlePullThread} />
+            </div>
+
+            <p className="mt-8 text-center text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+              {lampOn ? 'Deactivate sensory input to secure terminal' : 'Activate sensory input to reveal console'}
             </p>
           </div>
 
           <div
-            className={`rounded-2xl border p-6 transition duration-300 md:p-8 ${cardClass} ${lampOn ? 'translate-y-0 scale-100 opacity-100' : 'pointer-events-none translate-y-6 scale-95 opacity-0'
-              }`}
+            className={`rounded-[32px] border p-8 md:p-12 transition-all duration-700 ${cardClass} ${lampOn ? 'translate-y-0 translate-x-0 rotate-0 scale-100 opacity-100' : 'pointer-events-none translate-y-12 translate-x-4 rotate-1 scale-95 opacity-0'}`}
           >
-            <h2 className={`text-4xl font-bold ${titleClass}`}>Welcome Back</h2>
+            <div className="mb-8">
+                <h2 className="text-3xl font-black text-white mb-2">Initialize Session</h2>
+                <p className="text-sm text-slate-500 font-medium">Please enter your credentials to access the DevSpace kernel.</p>
+            </div>
 
-            {signupMessage ? <p className="mt-3 text-sm text-emerald-400">{signupMessage}</p> : null}
+            {signupMessage && (
+                <div className="mb-6 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm">check_circle</span>
+                    {signupMessage}
+                </div>
+            )}
 
-            <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-              <div>
-                <label htmlFor="email" className={`mb-1 block text-sm font-medium ${labelClass}`}>
-                  Email
-                </label>
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              <div className="space-y-2">
+                <label htmlFor="email" className={labelClass}>Terminal Identifier</label>
                 <input
                   ref={emailRef}
                   id="email"
@@ -130,43 +134,49 @@ function LoginPage() {
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`w-full rounded-lg border px-3 py-2 outline-none ring-0 transition focus:ring-4 ${inputClass}`}
-                  placeholder="you@example.com"
+                  className={`w-full rounded-xl border px-4 py-3.5 outline-none transition-all ${inputClass}`}
+                  placeholder="name@domain.com"
                 />
               </div>
 
-              <div>
-                <label htmlFor="password" className={`mb-1 block text-sm font-medium ${labelClass}`}>
-                  Password
-                </label>
+              <div className="space-y-2">
+                <label htmlFor="password" className={labelClass}>Security Passphrase</label>
                 <input
                   id="password"
                   name="password"
                   type="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className={`w-full rounded-lg border px-3 py-2 outline-none ring-0 transition focus:ring-4 ${inputClass}`}
-                  placeholder="Enter your password"
+                  className={`w-full rounded-xl border px-4 py-3.5 outline-none transition-all ${inputClass}`}
+                  placeholder="••••••••••••"
                 />
               </div>
 
-              {error ? <p className="text-sm text-rose-400">{error}</p> : null}
+              {error && (
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm">warning</span>
+                    {error}
+                </div>
+              )}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-lg border border-blue-400 bg-gradient-to-b from-blue-400 to-blue-600 px-3 py-2 font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-[0_10px_18px_rgba(67,131,255,0.28)] disabled:cursor-not-allowed disabled:opacity-70"
+                className="w-full rounded-xl bg-blue-600 hover:bg-blue-500 py-4 font-black text-white uppercase tracking-widest text-sm transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] active:scale-95 disabled:opacity-50"
               >
-                {loading ? 'Logging in...' : 'Login'}
+                {loading ? 'Authenticating...' : 'Establish Connection'}
               </button>
             </form>
 
-            <p className={`mt-4 text-sm ${helperClass}`}>
-              Don&apos;t have an account?{' '}
-              <Link className={`font-semibold ${linkClass}`} to="/signup">
-                Go to Signup
-              </Link>
-            </p>
+            <div className="mt-8 pt-8 border-t border-slate-800/50 flex flex-col items-center gap-4">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  New operator? {' '}
+                  <Link className={linkClass} to="/signup">Create Identity</Link>
+                </p>
+                <Link to="/" className="text-[10px] text-slate-600 hover:text-white transition-colors flex items-center gap-1 font-bold italic">
+                   <span className="material-symbols-outlined text-xs">arrow_back</span> Return to public zone
+                </Link>
+            </div>
           </div>
         </div>
       </div>
