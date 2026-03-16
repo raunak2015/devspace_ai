@@ -57,6 +57,12 @@ function LoginPage() {
       const redirectTo = location.state?.from?.pathname || '/dashboard';
       navigate(redirectTo, { replace: true });
     } catch (caughtError) {
+      if (caughtError.status === 403) {
+          navigate('/verify-otp', {
+              state: { email: caughtError.email, message: caughtError.message }
+          });
+          return;
+      }
       setError(caughtError instanceof Error ? caughtError.message : 'Login failed. Please try again.');
     } finally {
       setLoading(false);

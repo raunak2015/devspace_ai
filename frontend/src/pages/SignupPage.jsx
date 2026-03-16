@@ -77,16 +77,17 @@ function SignupPage() {
     setLoading(true);
 
     try {
-      await signup({
+      const response = await signup({
         name: trimmedName,
         email: trimmedEmail,
         password: formData.password
       });
 
-      navigate('/login', {
+      navigate('/verify-otp', {
         replace: true,
         state: {
-          signupMessage: 'Account created successfully. Please login.'
+          email: trimmedEmail,
+          message: response.message
         }
       });
     } catch (caughtError) {

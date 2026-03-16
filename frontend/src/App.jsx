@@ -9,6 +9,7 @@ import TasksPage from './pages/TasksPage';
 import ChatPage from './pages/ChatPage';
 import FilesPage from './pages/FilesPage';
 import AIAssistantPage from './pages/AIAssistantPage';
+import VerifyOTPPage from './pages/VerifyOTPPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 
@@ -19,6 +20,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/verify-otp" element={<VerifyOTPPage />} />
         <Route
           path="/dashboard"
           element={

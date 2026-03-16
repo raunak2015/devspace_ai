@@ -30,8 +30,12 @@ async function request(path, payload) {
     }
 
     if (!response.ok) {
+        // Return structured data for specific status codes if needed
         const message = data?.message || 'Request failed. Please try again.';
-        throw new Error(message);
+        const err = new Error(message);
+        err.status = response.status;
+        err.data = data;
+        throw err;
     }
 
     return data;
@@ -72,6 +76,14 @@ async function registerUser(payload) {
     return request('/auth/register', payload);
 }
 
+async function verifyOtp(payload) {
+    return request('/auth/verify-otp', payload);
+}
+
+async function resendOtp(payload) {
+    return request('/auth/resend-otp', payload);
+}
+
 async function getCurrentUserProfile() {
     return authRequest('/auth/me', 'GET');
 }
@@ -83,6 +95,8 @@ async function updateUserProfile(payload) {
 export {
     loginUser,
     registerUser,
+    verifyOtp,
+    resendOtp,
     getCurrentUserProfile,
     updateUserProfile
 };
