@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import { del, get, patch, post } from '../services/apiService';
 
 function FilesPage() {
     const { projectId } = useParams();
     const { user } = useAuth();
-    const { isDark } = useTheme();
 
     const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
     
     // Editor State
     const [selectedFile, setSelectedFile] = useState(null);
@@ -29,38 +28,20 @@ function FilesPage() {
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState('');
 
-    const pageClass = isDark ? 'bg-stone-950 text-stone-100' : 'bg-amber-50 text-stone-900';
-    const headerCardClass = isDark
-        ? 'border-stone-700 bg-stone-900/85 shadow-[0_4px_18px_rgba(0,0,0,0.3)]'
-        : 'border-amber-200 bg-gradient-to-br from-amber-50 to-orange-100 shadow-[0_4px_18px_rgba(67,43,20,0.12)]';
-    const subtitleClass = isDark ? 'text-stone-400' : 'text-stone-500';
+    const pageClass = 'bg-[#020617] text-white';
+    const cardClass = 'bg-[#0f172a]/80 border border-slate-800 shadow-xl backdrop-blur-md';
+    const subtitleClass = 'text-slate-400';
     
-    // Layout Classes
-    const panelClass = isDark
-        ? 'rounded-xl border border-stone-700 bg-stone-900/50 p-4'
-        : 'rounded-xl border border-amber-200 bg-white/50 p-4';
-    const fileItemClass = isDark
-        ? 'flex items-center justify-between rounded-lg px-3 py-2 hover:bg-stone-800 transition cursor-pointer mb-1'
-        : 'flex items-center justify-between rounded-lg px-3 py-2 hover:bg-amber-100/50 transition cursor-pointer mb-1';
-    const fileItemActiveClass = isDark
-        ? 'bg-stone-800 border border-stone-700'
-        : 'bg-amber-100 border border-amber-300 shadow-sm';
+    const panelClass = 'rounded-xl border border-slate-800 bg-[#0f172a]/50 p-4 shadow-lg backdrop-blur-sm h-full';
+    const fileItemClass = 'flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-blue-600/10 hover:text-blue-400 transition cursor-pointer mb-1 border border-transparent group';
+    const fileItemActiveClass = 'bg-blue-600/10 border border-blue-600/30 text-blue-400 font-bold shadow-[0_0_15px_rgba(37,99,235,0.1)]';
     
-    // Forms & Controls Classes
-    const inputClass = isDark
-        ? 'rounded-md border border-stone-600 bg-stone-800 px-3 py-1.5 text-stone-100 placeholder:text-stone-500 w-full text-sm focus:outline-none focus:ring-1 focus:ring-amber-600'
-        : 'rounded-md border border-amber-300 bg-white px-3 py-1.5 text-stone-900 placeholder:text-stone-400 w-full text-sm focus:outline-none focus:ring-1 focus:ring-amber-500';
-    const textareaClass = isDark
-        ? 'rounded-md border border-stone-600 bg-stone-950 p-4 text-stone-300 font-mono text-sm w-full h-[500px] focus:outline-none focus:ring-1 focus:ring-amber-600'
-        : 'rounded-md border border-amber-300 bg-amber-50/50 p-4 text-stone-800 font-mono text-sm w-full h-[500px] focus:outline-none focus:ring-1 focus:ring-amber-500';
-    const codeViewerClass = isDark
-        ? 'rounded-md border border-stone-700 bg-stone-950 p-4 text-stone-300 font-mono text-sm w-full h-[500px] overflow-auto whitespace-pre-wrap'
-        : 'rounded-md border border-amber-200 bg-amber-50/50 p-4 text-stone-800 font-mono text-sm w-full h-[500px] overflow-auto whitespace-pre-wrap';
+    const inputClass = 'rounded-md border border-slate-700 bg-[#020617] px-3 py-1.5 text-white placeholder:text-slate-500 w-full text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all';
+    const textareaClass = 'rounded-md border border-slate-800 bg-[#020617] p-5 text-slate-300 font-mono text-sm w-full h-[600px] focus:outline-none focus:ring-1 focus:ring-blue-500/50 shadow-inner resize-none';
+    const codeViewerClass = 'rounded-md border border-slate-800 bg-[#020617] p-5 text-slate-300 font-mono text-sm w-full h-[600px] overflow-auto whitespace-pre-wrap shadow-inner';
         
-    const btnPrimary = 'rounded-lg border border-amber-700 bg-gradient-to-b from-amber-700 to-amber-900 px-3 py-1.5 text-xs text-amber-50 transition hover:-translate-y-0.5 font-semibold';
-    const btnOutline = isDark
-        ? 'rounded-lg border border-stone-600 bg-stone-800/70 px-3 py-1.5 text-xs text-stone-100 hover:bg-stone-700 transition'
-        : 'rounded-lg border border-amber-200 bg-white/70 px-3 py-1.5 text-xs text-stone-900 hover:bg-white transition';
+    const btnPrimary = 'rounded-lg border border-blue-600 bg-blue-600 hover:bg-blue-500 px-3 py-1.5 text-xs text-white transition-all hover:shadow-[0_0_10px_rgba(37,99,235,0.3)] font-semibold';
+    const btnOutline = 'rounded-lg border border-slate-700 bg-[#1e293b]/70 px-3 py-1.5 text-xs text-white hover:bg-slate-700 transition-all';
 
     useEffect(() => {
         loadFiles();
@@ -86,7 +67,6 @@ function FilesPage() {
             setCreateError('Filename is required');
             return;
         }
-
         setCreating(true);
         setCreateError('');
         try {
@@ -109,17 +89,11 @@ function FilesPage() {
     async function handleFileUpload(e) {
         const file = e.target.files?.[0];
         if (!file) return;
-
-        // Reset the input value so the same file could be uploaded again if needed
         e.target.value = null;
-
         setUploading(true);
         setUploadError('');
-
         try {
             const content = await file.text();
-            
-            // Try to infer a simple language based on extension
             const ext = file.name.split('.').pop()?.toLowerCase();
             let language = 'plaintext';
             if (ext === 'js' || ext === 'jsx') language = 'javascript';
@@ -136,7 +110,6 @@ function FilesPage() {
                 language: language,
                 projectId
             });
-
             setFiles([data.file, ...files]);
             setSelectedFile(data.file);
             setEditContent(data.file.content || '');
@@ -150,7 +123,6 @@ function FilesPage() {
 
     async function handleDeleteFile(fileId, fileName) {
         if (!window.confirm(`Are you sure you want to delete ${fileName}?`)) return;
-
         try {
             await del(`/files/${fileId}`);
             setFiles(files.filter(f => f._id !== fileId));
@@ -178,15 +150,12 @@ function FilesPage() {
 
     async function handleSaveContent() {
         if (!selectedFile) return;
-        
         setSaving(true);
         setSaveError('');
         try {
             const data = await patch(`/files/${selectedFile._id}`, {
                 content: editContent
             });
-            
-            // Update local state
             const updatedFile = data.file;
             setFiles(files.map(f => f._id === updatedFile._id ? updatedFile : f));
             setSelectedFile(updatedFile);
@@ -199,174 +168,259 @@ function FilesPage() {
     }
 
     return (
-        <div className={`min-h-screen px-4 py-8 font-serif ${pageClass}`}>
-            <div className="mx-auto max-w-6xl">
-                
+        <div className={`min-h-screen font-display ${pageClass} selection:bg-blue-500/30`}>
+            {/* Layout Wrapper */}
+            <div className="relative flex h-screen w-full flex-col overflow-hidden">
+
                 {/* Header */}
-                <div className={`flex flex-wrap items-center justify-between rounded-2xl border px-6 py-4 mb-6 gap-4 ${headerCardClass}`}>
-                    <div>
-                        <h1 className="text-2xl font-semibold">Code Repository</h1>
-                        <p className={`text-xs mt-0.5 ${subtitleClass}`}>Project · {projectId}</p>
-                    </div>
-                    <div className="flex gap-2">
-                        <Link to={`/projects/${projectId}/tasks`} className={btnOutline.replace('text-xs', 'text-sm')}>
-                            Tasks
-                        </Link>
-                        <Link to={`/projects/${projectId}/chat`} className={btnOutline.replace('text-xs', 'text-sm')}>
-                            Chat
-                        </Link>
-                        <Link to="/projects" className={btnOutline.replace('text-xs', 'text-sm')}>
-                            ← Projects
-                        </Link>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    
-                    {/* Left Sidebar - File List */}
-                    <div className={`${panelClass} md:col-span-1 flex flex-col h-[600px]`}>
-                        <h2 className="text-sm font-semibold mb-3 uppercase tracking-wider">Files</h2>
-                        
-                        <form onSubmit={handleCreateFile} className="mb-4">
-                            <div className="flex gap-1">
-                                <input
-                                    type="text"
-                                    value={newFileName}
-                                    onChange={e => setNewFileName(e.target.value)}
-                                    placeholder="new_file.js"
-                                    className={inputClass}
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={creating}
-                                    className={`${btnPrimary} px-2 !py-1`}
-                                >
-                                    +
-                                </button>
-                            </div>
-                            {createError && <p className="text-[10px] text-red-500 mt-1">{createError}</p>}
-                        </form>
-
-                        <div className="mb-4">
-                             <label 
-                                className={`block w-full text-center cursor-pointer ${btnOutline} border-dashed border-2 py-3`}
-                             >
-                                <span className={`text-[10px] font-medium tracking-wide ${uploading ? 'opacity-50' : ''}`}>
-                                    {uploading ? 'UPLOADING...' : '+ UPLOAD FILE FROM DEVICE'}
-                                </span>
-                                <input 
-                                    type="file" 
-                                    className="hidden" 
-                                    onChange={handleFileUpload}
-                                    disabled={uploading}
-                                />
-                             </label>
-                             {uploadError && <p className="text-[10px] text-red-500 mt-1">{uploadError}</p>}
+                <header className="flex items-center justify-between whitespace-nowrap border-b border-slate-800 bg-[#030712]/90 px-4 sm:px-10 py-4 z-10 shrink-0 backdrop-blur-md">
+                    <div className="flex items-center gap-8">
+                        <div className="flex items-center gap-4 text-blue-500">
+                            <div className="material-symbols-outlined text-3xl drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]">hexagon</div>
+                            <h2 className="text-white text-xl font-bold leading-tight tracking-[-0.015em] hidden sm:block">DevSpace</h2>
                         </div>
+                        <label className="flex flex-col min-w-40 h-10 max-w-md w-96 relative group hidden md:flex">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-blue-500 transition-colors">
+                                <span className="material-symbols-outlined text-xl">search</span>
+                            </div>
+                            <input
+                                className="form-input flex w-full h-full pl-10 pr-4 py-2 bg-[#1e293b]/50 border border-slate-800 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 rounded-full text-sm text-white placeholder:text-slate-500 transition-all font-medium"
+                                placeholder="Search repository..."
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </label>
+                    </div>
+                    <div className="flex items-center gap-6">
+                        <button className="relative text-slate-500 hover:text-blue-400 transition-colors">
+                            <span className="material-symbols-outlined text-2xl">notifications</span>
+                            <span className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></span>
+                        </button>
+                        <div className="flex items-center gap-3 cursor-pointer group">
+                            <Link to="/profile" className="h-10 w-10 rounded-full bg-blue-500/10 border border-blue-500/30 overflow-hidden flex items-center justify-center group-hover:ring-2 ring-blue-500/50 transition-all">
+                                <span className="material-symbols-outlined text-blue-500 text-xl">person</span>
+                            </Link>
+                            <div className="hidden sm:block">
+                                <p className="text-sm font-semibold text-white">{user?.name || user?.email || 'User'}</p>
+                                <p className="text-xs text-slate-500">Developer</p>
+                            </div>
+                        </div>
+                    </div>
+                </header>
 
-                        <div className="flex-1 overflow-y-auto pr-1">
-                            {loading && <p className={`text-xs ${subtitleClass}`}>Loading files...</p>}
-                            {!loading && error && <p className="text-xs text-red-500">{error}</p>}
-                            {!loading && !error && files.length === 0 && (
-                                <p className={`text-xs italic ${subtitleClass}`}>No files yet.</p>
-                            )}
-                            
-                            {files.map(file => (
-                                <div 
-                                    key={file._id} 
-                                    onClick={() => selectFile(file)}
-                                    className={`${fileItemClass} ${selectedFile?._id === file._id ? fileItemActiveClass : ''}`}
-                                >
-                                    <div className="flex items-center gap-2 overflow-hidden">
-                                        <span className="text-amber-600 text-lg leading-none">📄</span>
-                                        <span className="text-sm truncate" title={file.name}>{file.name}</span>
-                                    </div>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleDeleteFile(file._id, file.name); }}
-                                        className="text-red-500 opacity-50 hover:opacity-100 text-xs px-1"
-                                        title="Delete File"
-                                    >
-                                        ×
-                                    </button>
+                <div className="flex flex-1 overflow-hidden relative">
+                    {/* Sidebar */}
+                    <aside className="w-16 md:w-64 flex-shrink-0 flex flex-col justify-between border-r border-slate-800 bg-[#030712]/50 p-4 h-full overflow-y-auto z-0">
+                        <div className="flex flex-col gap-8">
+                            <nav className="flex flex-col gap-1.5 mt-4">
+                                <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-blue-600/10 hover:text-blue-400 transition-all group">
+                                    <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">dashboard</span>
+                                    <span className="text-sm font-medium hidden md:inline">Dashboard</span>
+                                </Link>
+                                <Link to="/projects" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-blue-600/10 hover:text-blue-400 transition-all group">
+                                    <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">folder_special</span>
+                                    <span className="text-sm font-medium hidden md:inline">Projects</span>
+                                </Link>
+                                <Link to="/ai" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-blue-600/10 hover:text-blue-400 transition-all group">
+                                    <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">smart_toy</span>
+                                    <span className="text-sm font-medium hidden md:inline">AI Assistant</span>
+                                </Link>
+                            </nav>
+                        </div>
+                    </aside>
+
+                    {/* Main Content Area */}
+                    <main className="flex-1 overflow-y-auto p-4 sm:p-8 relative">
+                        {/* Background decorative elements */}
+                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[100px] pointer-events-none"></div>
+                        <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] bg-blue-600/5 rounded-full blur-[80px] pointer-events-none"></div>
+
+                        <div className="max-w-7xl mx-auto flex flex-col gap-6 h-full relative z-10">
+                            {/* Page Header */}
+                            <div className="flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-slate-800/50 gap-4">
+                                <div>
+                                    <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
+                                        <span className="material-symbols-outlined text-blue-500 text-3xl">code</span>
+                                        Code Repository
+                                    </h1>
+                                    <p className={`mt-1 text-sm ${subtitleClass}`}>Manage artifacts, prototypes, and production assets.</p>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Main Area - Editor/Viewer */}
-                    <div className={`${panelClass} md:col-span-3 flex flex-col h-[600px]`}>
-                        {!selectedFile ? (
-                            <div className={`flex h-full items-center justify-center ${subtitleClass}`}>
-                                <p>Select a file to view or edit</p>
+                                <div className="flex gap-2">
+                                    <Link to={`/projects/${projectId}/tasks`} className="rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-2 text-sm text-white hover:bg-slate-700 transition-all flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-lg text-blue-400">assignment</span> Tasks
+                                    </Link>
+                                    <Link to={`/projects/${projectId}/chat`} className="rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-2 text-sm text-white hover:bg-slate-700 transition-all flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-lg text-blue-400">forum</span> Chat
+                                    </Link>
+                                    <Link to="/projects" className="rounded-lg border border-slate-700 bg-[#020617] px-4 py-2 text-sm text-white hover:bg-slate-800 transition-all flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-lg rotate-180">arrow_forward</span>
+                                    </Link>
+                                </div>
                             </div>
-                        ) : (
-                            <>
-                                <div className="flex items-center justify-between mb-3 border-b border-stone-500/20 pb-2">
-                                    <div className="flex items-center gap-3">
-                                        <h2 className="text-lg font-mono font-medium">{selectedFile.name}</h2>
-                                        <span className={`text-[10px] uppercase px-2 py-0.5 rounded-full border ${isDark ? 'border-stone-700 bg-stone-800' : 'border-amber-200 bg-amber-100'}`}>
-                                            {selectedFile.language}
-                                        </span>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-[700px]">
+                                {/* File Explorer Sidebar */}
+                                <div className={`${panelClass} flex flex-col`}>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h2 className="text-xs uppercase font-bold text-slate-500 tracking-widest">Repository</h2>
+                                        <span className="text-[10px] bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20">{files.length} Files</span>
                                     </div>
-                                    <div className="flex gap-2">
-                                        {isEditingContent ? (
-                                            <>
-                                                <button 
-                                                    onClick={handleSaveContent} 
-                                                    disabled={saving || editContent === selectedFile.content}
-                                                    className={`${btnPrimary} !text-sm disabled:opacity-50`}
-                                                >
-                                                    {saving ? 'Saving...' : 'Save File'}
-                                                </button>
-                                                <button 
-                                                    onClick={() => {
-                                                        if (editContent !== selectedFile.content && !window.confirm('Discard unsaved changes?')) return;
-                                                        setIsEditingContent(false);
-                                                        setEditContent(selectedFile.content || '');
-                                                    }}
-                                                    className={`${btnOutline} !text-sm`}
-                                                >
-                                                    Cancel
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <button 
-                                                onClick={() => setIsEditingContent(true)}
-                                                className={`${btnOutline} !text-sm`}
+                                    
+                                    <form onSubmit={handleCreateFile} className="mb-4">
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={newFileName}
+                                                onChange={e => setNewFileName(e.target.value)}
+                                                placeholder="New filename..."
+                                                className={inputClass}
+                                            />
+                                            <button
+                                                type="submit"
+                                                disabled={creating}
+                                                className="bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded-md transition-all shadow-lg active:scale-95 disabled:opacity-50"
                                             >
-                                                Edit File
+                                                <span className="material-symbols-outlined text-lg">add</span>
                                             </button>
+                                        </div>
+                                        {createError && <p className="text-[10px] text-red-500 mt-2 font-medium">{createError}</p>}
+                                    </form>
+
+                                    <div className="mb-6">
+                                         <label className="block w-full text-center cursor-pointer rounded-xl border-dashed border-2 border-slate-800 bg-[#030712]/30 py-4 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all group">
+                                            <span className="material-symbols-outlined text-slate-500 group-hover:text-blue-400 transition-colors mb-1 block">cloud_upload</span>
+                                            <span className="text-[9px] font-bold text-slate-500 group-hover:text-blue-400 uppercase tracking-widest">
+                                                {uploading ? 'Processing...' : 'Upload Asset'}
+                                            </span>
+                                            <input type="file" className="hidden" onChange={handleFileUpload} disabled={uploading}/>
+                                         </label>
+                                         {uploadError && <p className="text-[10px] text-red-500 mt-2 font-medium text-center">{uploadError}</p>}
+                                    </div>
+
+                                    <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                                        {loading && (
+                                            <div className="flex items-center gap-2 py-4">
+                                                <div className="h-3 w-3 border border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                                <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">Syncing...</p>
+                                            </div>
                                         )}
+                                        
+                                        {files.map(file => (
+                                            <div 
+                                                key={file._id} 
+                                                onClick={() => selectFile(file)}
+                                                className={`${fileItemClass} ${selectedFile?._id === file._id ? fileItemActiveClass : ''}`}
+                                            >
+                                                <div className="flex items-center gap-3 overflow-hidden">
+                                                    <span className="material-symbols-outlined text-blue-500/70 text-lg group-hover:text-blue-400">description</span>
+                                                    <span className="text-[13px] font-medium truncate" title={file.name}>{file.name}</span>
+                                                </div>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteFile(file._id, file.name); }}
+                                                    className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-red-500 transition-all p-1"
+                                                >
+                                                    <span className="material-symbols-outlined text-sm">close</span>
+                                                </button>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
-                                
-                                {saveError && <p className="mb-2 text-xs text-red-500">{saveError}</p>}
-                                
-                                <div className="flex-1 overflow-hidden relative">
-                                    {isEditingContent ? (
-                                        <textarea
-                                            value={editContent}
-                                            onChange={e => setEditContent(e.target.value)}
-                                            className={textareaClass}
-                                            spellCheck={false}
-                                            placeholder="// Start typing your code here..."
-                                        />
-                                    ) : (
-                                        <div className={codeViewerClass}>
-                                            {selectedFile.content || <span className="opacity-40 italic">Empty file</span>}
+
+                                {/* Code Editor / Viewer */}
+                                <div className={`${panelClass} lg:col-span-3 flex flex-col overflow-hidden`}>
+                                    {!selectedFile ? (
+                                        <div className="flex-1 flex flex-col items-center justify-center opacity-30 text-center p-12">
+                                            <span className="material-symbols-outlined text-8xl mb-4">folder_open</span>
+                                            <h3 className="text-2xl font-bold">Workspace Empty</h3>
+                                            <p className="text-sm mt-2 max-w-xs">Select a file from the repository to synchronize your development workspace.</p>
                                         </div>
+                                    ) : (
+                                        <>
+                                            <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-800/50">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="h-10 w-10 bg-blue-600/10 border border-blue-500/20 rounded-lg flex items-center justify-center">
+                                                        <span className="material-symbols-outlined text-blue-500">article</span>
+                                                    </div>
+                                                    <div>
+                                                        <h2 className="text-xl font-bold text-white leading-none">{selectedFile.name}</h2>
+                                                        <div className="flex items-center gap-2 mt-1.5">
+                                                            <span className="text-[10px] font-bold text-blue-400 uppercase bg-blue-600/10 px-2 py-0.5 rounded border border-blue-500/20">
+                                                                {selectedFile.language || 'Plaintext'}
+                                                            </span>
+                                                            <span className="text-[10px] text-slate-600 font-medium">Synchronized with Edge-V1</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    {isEditingContent ? (
+                                                        <>
+                                                            <button onClick={handleSaveContent} disabled={saving} className={btnPrimary}>
+                                                                {saving ? 'Saving...' : 'Commit Changes'}
+                                                            </button>
+                                                            <button onClick={() => { setIsEditingContent(false); setEditContent(selectedFile.content || ''); }} className={btnOutline}>
+                                                                Discard
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <button onClick={() => setIsEditingContent(true)} className={btnOutline + " !bg-blue-600/10 !text-blue-400 !border-blue-600/30"}>
+                                                            Modify File
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {saveError && (
+                                                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-xs flex items-center gap-2">
+                                                    <span className="material-symbols-outlined text-sm">error</span>
+                                                    {saveError}
+                                                </div>
+                                            )}
+
+                                            <div className="flex-1 overflow-hidden relative group">
+                                                {isEditingContent ? (
+                                                    <textarea
+                                                        value={editContent}
+                                                        onChange={e => setEditContent(e.target.value)}
+                                                        className={textareaClass}
+                                                        spellCheck={false}
+                                                    />
+                                                ) : (
+                                                    <div className={codeViewerClass}>
+                                                        {selectedFile.content || <span className="opacity-20 italic">Empty Source Code</span>}
+                                                    </div>
+                                                )}
+                                                <div className="absolute top-4 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button className="h-8 w-8 bg-slate-800 rounded flex items-center justify-center text-slate-400 hover:text-white" title="Expand View">
+                                                        <span className="material-symbols-outlined text-sm">fullscreen</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-4 pt-4 border-t border-slate-800/50 flex flex-col sm:flex-row justify-between items-center gap-4">
+                                                <div className="flex gap-6">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-0.5">Author</span>
+                                                        <span className="text-[11px] text-slate-300 font-medium">{selectedFile.owner}</span>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-0.5">Revision</span>
+                                                        <span className="text-[11px] text-slate-300 font-medium">{new Date(selectedFile.updatedAt).toLocaleString()}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-1.5 h-1.5">
+                                                    <div className="w-12 rounded-full bg-blue-600"></div>
+                                                    <div className="w-8 rounded-full bg-slate-800"></div>
+                                                    <div className="w-4 rounded-full bg-slate-800"></div>
+                                                </div>
+                                            </div>
+                                        </>
                                     )}
                                 </div>
-                                
-                                <div className={`mt-2 flex justify-between text-[10px] ${subtitleClass}`}>
-                                    <span>Added by: {selectedFile.owner}</span>
-                                    <span>Last modified: {new Date(selectedFile.updatedAt).toLocaleString()}</span>
-                                </div>
-                            </>
-                        )}
-                    </div>
+                            </div>
+                        </div>
+                    </main>
                 </div>
-
             </div>
         </div>
     );

@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .glass-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(43, 43, 238, 0.15);
+      box-shadow: 0 8px 32px 0 rgba(43, 43, 238, 0.04);
+  }
+  
+  [data-theme="dark"] .glass-card {
+      background: rgba(43, 43, 238, 0.05);
+      border: 1px solid rgba(43, 43, 238, 0.2);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+  
+  [data-theme="dark"] .neon-text {
+      text-shadow: 0 0 10px rgba(43, 43, 238, 0.5), 0 0 20px rgba(43, 43, 238, 0.3);
+  }
+}
+@tailwind utilities;
+
 .lamp-login-shell.is-on .lamp-glow {
   opacity: 1;
 }

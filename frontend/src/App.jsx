@@ -10,14 +10,13 @@ import ChatPage from './pages/ChatPage';
 import FilesPage from './pages/FilesPage';
 import AIAssistantPage from './pages/AIAssistantPage';
 import ProtectedRoute from './components/ProtectedRoute';
-import ThemeToggle from './components/ThemeToggle';
+
 
 function App() {
   return (
     <>
-      <ThemeToggle />
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route
