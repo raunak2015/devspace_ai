@@ -1,4 +1,17 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const SESSION_KEY = 'devspace_user';
+
+function getAuthToken() {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return '';
+
+    try {
+        const parsed = JSON.parse(raw);
+        return parsed?.token || '';
+    } catch {
+        return '';
+    }
+}
 
 async function request(path, payload) {
     const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -24,6 +37,33 @@ async function request(path, payload) {
     return data;
 }
 
+async function authRequest(path, method, payload) {
+    const token = getAuthToken();
+
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+        method,
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+        },
+        body: payload ? JSON.stringify(payload) : undefined
+    });
+
+    let data = null;
+    try {
+        data = await response.json();
+    } catch {
+        data = null;
+    }
+
+    if (!response.ok) {
+        const message = data?.message || 'Request failed. Please try again.';
+        throw new Error(message);
+    }
+
+    return data;
+}
+
 async function loginUser(payload) {
     return request('/auth/login', payload);
 }
@@ -32,7 +72,17 @@ async function registerUser(payload) {
     return request('/auth/register', payload);
 }
 
+async function getCurrentUserProfile() {
+    return authRequest('/auth/me', 'GET');
+}
+
+async function updateUserProfile(payload) {
+    return authRequest('/auth/profile', 'PATCH', payload);
+}
+
 export {
     loginUser,
-    registerUser
+    registerUser,
+    getCurrentUserProfile,
+    updateUserProfile
 };
