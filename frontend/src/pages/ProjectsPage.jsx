@@ -237,19 +237,27 @@ function ProjectsPage() {
                                             Tasks
                                         </Link>
                                         <Link
+                                            to={`/projects/${project._id}/files`}
+                                            className={btnOutline}
+                                        >
+                                            Code
+                                        </Link>
+                                        <Link
                                             to={`/projects/${project._id}/chat`}
                                             className={btnOutline}
                                         >
                                             Chat
                                         </Link>
-                                        <button
-                                            type="button"
-                                            disabled={deletingProjectId === project._id}
-                                            onClick={() => handleDeleteProject(project._id, project.name)}
-                                            className="rounded-lg border border-red-500/70 bg-red-500/10 px-3 py-2 text-sm text-red-500 transition hover:bg-red-500/20 disabled:opacity-60"
-                                        >
-                                            {deletingProjectId === project._id ? 'Deleting…' : 'Delete'}
-                                        </button>
+                                        { (project.owner === user?._id || project.owner === user?.email || project.ownerEmail === user?.email) && (
+                                            <button
+                                                type="button"
+                                                disabled={deletingProjectId === project._id}
+                                                onClick={() => handleDeleteProject(project._id, project.name)}
+                                                className="rounded-lg border border-red-500/70 bg-red-500/10 px-3 py-2 text-sm text-red-500 transition hover:bg-red-500/20 disabled:opacity-60"
+                                            >
+                                                {deletingProjectId === project._id ? 'Deleting…' : 'Delete'}
+                                            </button>
+                                        )}
                                     </div>
 
                                     <div className="mt-4">
@@ -261,35 +269,39 @@ function ProjectsPage() {
                                             {(project.members || []).map((member) => (
                                                 <span key={member} className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white/70 px-3 py-1 text-xs text-stone-700">
                                                     {member}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemoveMember(project, member)}
-                                                        disabled={memberSavingId === project._id}
-                                                        className="text-red-500 hover:text-red-600 disabled:opacity-60"
-                                                    >
-                                                        ×
-                                                    </button>
+                                                    { (project.owner === user?._id || project.owner === user?.email || project.ownerEmail === user?.email) && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveMember(project, member)}
+                                                            disabled={memberSavingId === project._id}
+                                                            className="text-red-500 hover:text-red-600 disabled:opacity-60"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    )}
                                                 </span>
                                             ))}
                                         </div>
 
-                                        <div className="mt-3 flex gap-2">
-                                            <input
-                                                type="email"
-                                                value={memberInputs[project._id] || ''}
-                                                onChange={(e) => updateMemberInput(project._id, e.target.value)}
-                                                placeholder="Add member email"
-                                                className={inputClass}
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => handleAddMember(project)}
-                                                disabled={memberSavingId === project._id}
-                                                className={`${btnPrimary} whitespace-nowrap disabled:opacity-60`}
-                                            >
-                                                {memberSavingId === project._id ? 'Saving…' : 'Add'}
-                                            </button>
-                                        </div>
+                                        { (project.owner === user?._id || project.owner === user?.email || project.ownerEmail === user?.email) && (
+                                            <div className="mt-3 flex gap-2">
+                                                <input
+                                                    type="email"
+                                                    value={memberInputs[project._id] || ''}
+                                                    onChange={(e) => updateMemberInput(project._id, e.target.value)}
+                                                    placeholder="Add member email"
+                                                    className={inputClass}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleAddMember(project)}
+                                                    disabled={memberSavingId === project._id}
+                                                    className={`${btnPrimary} whitespace-nowrap disabled:opacity-60`}
+                                                >
+                                                    {memberSavingId === project._id ? 'Saving…' : 'Add'}
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}

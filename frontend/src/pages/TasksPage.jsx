@@ -276,6 +276,9 @@ function TasksPage() {
                         <p className={`text-xs mt-0.5 ${subtitleClass}`}>Project · {projectId}</p>
                     </div>
                     <div className="flex gap-2">
+                        <Link to={`/projects/${projectId}/files`} className={btnOutline.replace('text-xs', 'text-sm')}>
+                            Code
+                        </Link>
                         <Link to={`/projects/${projectId}/chat`} className={btnOutline.replace('text-xs', 'text-sm')}>
                             Chat
                         </Link>

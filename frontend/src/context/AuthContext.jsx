@@ -9,19 +9,8 @@ export function AuthProvider({ children }) {
   const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    const raw = localStorage.getItem(SESSION_KEY);
-    if (raw) {
-      try {
-        const session = JSON.parse(raw);
-        if (session?.user && session?.token) {
-          setUser(session.user);
-        } else {
-          localStorage.removeItem(SESSION_KEY);
-        }
-      } catch {
-        localStorage.removeItem(SESSION_KEY);
-      }
-    }
+    // Removed auto login process as requested
+    localStorage.removeItem(SESSION_KEY);
     setAuthReady(true);
   }, []);
 
