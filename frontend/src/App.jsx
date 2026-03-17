@@ -10,6 +10,7 @@ import ChatPage from './pages/ChatPage';
 import FilesPage from './pages/FilesPage';
 import AIAssistantPage from './pages/AIAssistantPage';
 import VerifyOTPPage from './pages/VerifyOTPPage';
+import AcceptInvitationPage from './pages/AcceptInvitationPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 
@@ -21,6 +22,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/verify-otp" element={<VerifyOTPPage />} />
+        <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />
         <Route
           path="/dashboard"
           element={
