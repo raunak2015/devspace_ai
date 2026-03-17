@@ -5,8 +5,9 @@ const config = getEnvConfig();
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // Use SSL
+    port: 587,
+    secure: false, // Use STARTTLS
+    requireTLS: true,
     auth: {
         user: config.emailUser || 'devspace.ai.sprint@gmail.com',
         pass: config.emailPass || 'your-app-password'
