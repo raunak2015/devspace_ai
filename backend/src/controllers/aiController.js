@@ -24,6 +24,10 @@ function isOpenAIQuotaError(message) {
     return /quota|rate limit|insufficient_quota|billing details/i.test(String(message || ''));
 }
 
+function isGroqQuotaError(message) {
+    return /rate limit|quota|limit reached/i.test(String(message || ''));
+}
+
 function extractRetryAfterSeconds(message) {
     const match = String(message || '').match(/retry in\s+([0-9]+(?:\.[0-9]+)?)s/i);
     if (!match) {
@@ -191,6 +195,48 @@ async function callGemini(prompt, apiKey) {
     return explanation;
 }
 
+async function callGroq(prompt, apiKey) {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+                {
+                    role: 'system',
+                    content: 'You are a concise coding assistant. Explain and improve code clearly.'
+                },
+                {
+                    role: 'user',
+                    content: prompt
+                }
+            ],
+            temperature: 0.2
+        })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        const message = data?.error?.message || 'Groq request failed.';
+        const error = new Error(message);
+        error.statusCode = response.status;
+        error.isGroqQuotaError = isGroqQuotaError(message);
+        throw error;
+    }
+
+    const explanation = extractOpenAIText(data);
+
+    if (!explanation) {
+        throw new Error('Groq returned an empty response.');
+    }
+
+    return explanation;
+}
+
 async function explainCode(req, res, next) {
     try {
         const { prompt } = req.body;
@@ -212,6 +258,8 @@ async function explainCode(req, res, next) {
 
         if (provider === 'openai') {
             explanation = await callOpenAI(prompt, aiApiKey);
+        } else if (provider === 'groq') {
+            explanation = await callGroq(prompt, aiApiKey);
         } else if (provider === 'gemini') {
             try {
                 explanation = await callGemini(prompt, aiApiKey);
@@ -255,7 +303,7 @@ async function explainCode(req, res, next) {
             }
         } else {
             res.status(400);
-            throw new Error('Unsupported AI provider. Use openai or gemini.');
+            throw new Error('Unsupported AI provider. Use openai, gemini, or groq.');
         }
 
         res.status(200).json({
@@ -263,7 +311,7 @@ async function explainCode(req, res, next) {
             explanation
         });
     } catch (error) {
-        if (error?.isGeminiQuotaError || error?.isOpenAIQuotaError) {
+        if (error?.isGeminiQuotaError || error?.isOpenAIQuotaError || error?.isGroqQuotaError) {
             const retryAfterSeconds = error?.retryAfterSeconds || 60;
 
             if (res.statusCode < 400) {
