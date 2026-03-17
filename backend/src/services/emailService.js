@@ -1,36 +1,42 @@
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 const { getEnvConfig } = require('../config/env');
 
 const config = getEnvConfig();
 
-// Read API key gracefully
-const apiKey = config.resendApiKey || process.env.RESEND_API_KEY;
+// Read Brevo SMTP credentials
+const smtpUser = config.emailUser || process.env.EMAIL_USER;
+const smtpPass = config.emailPass || process.env.EMAIL_PASS;
 
-// Initialize Resend only if key exists to prevent fatal startup crashes
-const resend = apiKey ? new Resend(apiKey) : null;
+// Always fallback to a valid email string for the 'from' field
+// This should ideally be the email you used to register Brevo
+const senderEmail = smtpUser || 'srr0607378@gmail.com'; 
 
-const FROM_EMAIL = 'onboarding@resend.dev';
+const transporter = nodemailer.createTransport({
+    host: 'smtp-relay.brevo.com',
+    port: 587,
+    secure: false, // Use STARTTLS
+    auth: {
+        user: smtpUser,
+        pass: smtpPass
+    }
+});
 
 async function sendEmail({ to, subject, html, text }) {
-    if (!resend) {
-        console.error('Email Dispatch Error: RESEND_API_KEY is not configured in this environment.');
+    if (!smtpUser || !smtpPass) {
+        console.error('Email Error: Missing EMAIL_USER or EMAIL_PASS in environment variables.');
         return false;
     }
 
+    const mailOptions = {
+        from: `"DevSpace" <${senderEmail}>`,
+        to,
+        subject,
+        html,
+        text
+    };
+
     try {
-        const { data, error } = await resend.emails.send({
-            from: `DevSpace <${FROM_EMAIL}>`,
-            to,
-            subject,
-            html,
-            text
-        });
-
-        if (error) {
-            console.error('Email API Error:', error);
-            return false;
-        }
-
+        await transporter.sendMail(mailOptions);
         return true;
     } catch (error) {
         console.error('Email Dispatch Error:', error.message);
