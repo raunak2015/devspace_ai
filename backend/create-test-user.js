@@ -1,4 +1,9 @@
 const mongoose = require('mongoose');
+const dns = require('dns');
+
+// Fix for restricted networks that block MongoDB SRV lookups
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+
 const User = require('./src/models/User');
 const { getEnvConfig } = require('./src/config/env');
 const dotenv = require('dotenv');
