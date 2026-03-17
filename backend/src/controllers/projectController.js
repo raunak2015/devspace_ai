@@ -2,6 +2,9 @@ const Project = require('../models/Project');
 const Task = require('../models/Task');
 const Message = require('../models/Message');
 const User = require('../models/User');
+const Invitation = require('../models/Invitation');
+const crypto = require('crypto');
+const { sendInvitationEmail } = require('../services/emailService');
 
 function normalizeEmail(value) {
     return String(value || '').trim().toLowerCase();
@@ -149,6 +152,106 @@ async function deleteProject(req, res, next) {
     }
 }
 
+async function inviteMember(req, res, next) {
+    try {
+        const { projectId } = req.params;
+        const { email } = req.body;
+        const normalizedEmail = normalizeEmail(email);
+
+        if (!normalizedEmail) {
+            res.status(400);
+            throw new Error('Email is required.');
+        }
+
+        const project = await Project.findOne({ _id: projectId, owner: req.user?.id });
+        if (!project) {
+            res.status(404);
+            throw new Error('Project not found or you are not the owner.');
+        }
+
+        // Check if already a member
+        if (project.members.includes(normalizedEmail)) {
+            res.status(400);
+            throw new Error('User is already a member of this project.');
+        }
+
+        // Create invitation token
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+        // Check for existing pending invitation
+        await Invitation.deleteMany({ email: normalizedEmail, projectId, accepted: false });
+
+        const invitation = await Invitation.create({
+            email: normalizedEmail,
+            projectId,
+            token,
+            expiresAt
+        });
+
+        // Send Email
+        await sendInvitationEmail(normalizedEmail, project.name, token);
+
+        res.status(200).json({
+            message: 'Invitation sent successfully. Member will be added once they confirm.',
+            invitation: {
+                email: invitation.email,
+                expiresAt: invitation.expiresAt
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+async function acceptInvitation(req, res, next) {
+    try {
+        const { token } = req.body;
+
+        if (!token) {
+            res.status(400);
+            throw new Error('Token is required.');
+        }
+
+        const invitation = await Invitation.findOne({ 
+            token, 
+            accepted: false,
+            expiresAt: { $gt: Date.now() }
+        });
+
+        if (!invitation) {
+            res.status(404);
+            throw new Error('Invalid or expired invitation.');
+        }
+
+        const project = await Project.findById(invitation.projectId);
+        if (!project) {
+            res.status(404);
+            throw new Error('Project no longer exists.');
+        }
+
+        // Add member to project if not already there
+        const email = normalizeEmail(invitation.email);
+        if (!project.members.includes(email)) {
+            project.members.push(email);
+            // Ensure uniqueness
+            project.members = sanitizeMembers(project.members);
+            await project.save();
+        }
+
+        invitation.accepted = true;
+        await invitation.save();
+
+        res.status(200).json({
+            message: `Successfully joined ${project.name}.`,
+            projectId: project._id,
+            projectName: project.name
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 async function updateProjectMembers(req, res, next) {
     try {
         const { projectId } = req.params;
@@ -186,5 +289,7 @@ module.exports = {
     listProjects,
     getProjectSummary,
     deleteProject,
+    inviteMember,
+    acceptInvitation,
     updateProjectMembers
 };

@@ -52,6 +52,12 @@ async function createMessage(req, res, next) {
             message: String(message).trim()
         });
 
+        // Broadcast the new message to all clients in the project room
+        const io = req.app.get('io');
+        if (io) {
+            io.to(String(projectId).trim()).emit('newMessage', created);
+        }
+
         res.status(201).json({
             message: 'Message sent successfully.',
             data: created
@@ -116,6 +122,12 @@ async function deleteMessage(req, res, next) {
         }
 
         await Message.deleteOne({ _id: messageId });
+
+        // Broadcast the deletion to all clients in the project room
+        const io = req.app.get('io');
+        if (io) {
+            io.to(message.projectId.toString()).emit('messageDeleted', messageId);
+        }
 
         res.status(200).json({
             message: 'Message deleted successfully.'

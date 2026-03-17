@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { del, get, post } from '../services/apiService';
+
+const SOCKET_URL = import.meta.env.VITE_API_BASE_URL
+    ? import.meta.env.VITE_API_BASE_URL.replace('/api', '')
+    : 'http://localhost:5000';
 
 function ChatPage() {
     const { projectId } = useParams();
@@ -54,6 +59,32 @@ function ChatPage() {
             .finally(() => setLoading(false));
     }, [projectId]);
 
+    // Socket.io real-time connection
+    useEffect(() => {
+        const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
+
+        socket.on('connect', () => {
+            socket.emit('joinProject', projectId);
+        });
+
+        socket.on('newMessage', (msg) => {
+            setMessages((prev) => {
+                // Avoid duplicates
+                if (prev.some((m) => m._id === msg._id)) return prev;
+                return [...prev, msg];
+            });
+        });
+
+        socket.on('messageDeleted', (messageId) => {
+            setMessages((prev) => prev.filter((m) => m._id !== messageId));
+        });
+
+        return () => {
+            socket.emit('leaveProject', projectId);
+            socket.disconnect();
+        };
+    }, [projectId]);
+
     const ownerLabel = project
         ? (project.ownerName || project.ownerEmail || project.owner || 'Unknown')
         : 'Loading...';
@@ -96,12 +127,12 @@ function ChatPage() {
         if (!trimmed || sending) return;
         setSending(true);
         try {
-            const data = await post('/messages', {
+            await post('/messages', {
                 projectId,
                 sender: senderName,
                 message: trimmed
             });
-            setMessages(prev => [...prev, data.data]);
+            // Don't manually append — the Socket.io 'newMessage' event will add it in real-time
             setText('');
         } catch {
             // silent – message not added

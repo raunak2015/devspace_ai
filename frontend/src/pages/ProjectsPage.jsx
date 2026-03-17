@@ -105,10 +105,9 @@ function ProjectsPage() {
         setError('');
 
         try {
-            const updatedMembers = [...(project.members || []), trimmed];
-            const data = await patch(`/projects/${project._id}/members`, { members: updatedMembers });
-            setProjects((prev) => prev.map((item) => (item._id === project._id ? data.project : item)));
+            await post(`/projects/${project._id}/invite`, { email: trimmed });
             setMemberInputs((prev) => ({ ...prev, [project._id]: '' }));
+            alert(`Invitation sent to ${trimmed}. They will be added after confirming.`);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -392,13 +391,13 @@ function ProjectsPage() {
                                                                 placeholder="Invite member..."
                                                                 className="flex-1 w-full pl-3 pr-3 py-1.5 bg-slate-800/50 border border-slate-600 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 rounded-md text-xs text-slate-100 placeholder:text-slate-500 transition-all"
                                                             />
-                                                            <button
+                                                                    <button
                                                                 type="button"
                                                                 onClick={() => handleAddMember(project)}
                                                                 disabled={memberSavingId === project._id}
                                                                 className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-md text-xs font-semibold transition-all disabled:opacity-50 shadow-[0_0_10px_rgba(37,99,235,0.2)]"
                                                             >
-                                                                {memberSavingId === project._id ? '…' : 'Add'}
+                                                                {memberSavingId === project._id ? '…' : 'Invite'}
                                                             </button>
                                                         </div>
                                                     )}
