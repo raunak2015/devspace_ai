@@ -4,7 +4,9 @@ const { getEnvConfig } = require('../config/env');
 const config = getEnvConfig();
 
 const transporter = nodemailer.createTransport({
-    service: config.emailService || 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // Use SSL
     auth: {
         user: config.emailUser || 'devspace.ai.sprint@gmail.com',
         pass: config.emailPass || 'your-app-password'
