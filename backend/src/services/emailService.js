@@ -3,17 +3,20 @@ const { getEnvConfig } = require('../config/env');
 
 const config = getEnvConfig();
 
-// Initialize Resend
-// Note: If RESEND_API_KEY is missing, initialization won't fail yet, 
-// but it will fail when trying to send.
-const resend = new Resend(config.resendApiKey || process.env.RESEND_API_KEY);
+// Read API key gracefully
+const apiKey = config.resendApiKey || process.env.RESEND_API_KEY;
 
-// You must use a verified domain in Resend.
-// If you don't have a domain, you can only send to the exact email address
-// that you used to sign up for Resend via 'onboarding@resend.dev'.
+// Initialize Resend only if key exists to prevent fatal startup crashes
+const resend = apiKey ? new Resend(apiKey) : null;
+
 const FROM_EMAIL = 'onboarding@resend.dev';
 
 async function sendEmail({ to, subject, html, text }) {
+    if (!resend) {
+        console.error('Email Dispatch Error: RESEND_API_KEY is not configured in this environment.');
+        return false;
+    }
+
     try {
         const { data, error } = await resend.emails.send({
             from: `DevSpace <${FROM_EMAIL}>`,
