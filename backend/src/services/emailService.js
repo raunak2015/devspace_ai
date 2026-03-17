@@ -1,33 +1,36 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const { getEnvConfig } = require('../config/env');
 
 const config = getEnvConfig();
 
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // Use STARTTLS
-    requireTLS: true,
-    auth: {
-        user: config.emailUser || 'devspace.ai.sprint@gmail.com',
-        pass: config.emailPass || 'your-app-password'
-    }
-});
+// Initialize Resend
+// Note: If RESEND_API_KEY is missing, initialization won't fail yet, 
+// but it will fail when trying to send.
+const resend = new Resend(config.resendApiKey || process.env.RESEND_API_KEY);
+
+// You must use a verified domain in Resend.
+// If you don't have a domain, you can only send to the exact email address
+// that you used to sign up for Resend via 'onboarding@resend.dev'.
+const FROM_EMAIL = 'onboarding@resend.dev';
 
 async function sendEmail({ to, subject, html, text }) {
-    const mailOptions = {
-        from: `"DevSpace" <${config.emailUser || 'devspace.ai.sprint@gmail.com'}>`,
-        to,
-        subject,
-        html,
-        text
-    };
-
     try {
-        await transporter.sendMail(mailOptions);
+        const { data, error } = await resend.emails.send({
+            from: `DevSpace <${FROM_EMAIL}>`,
+            to,
+            subject,
+            html,
+            text
+        });
+
+        if (error) {
+            console.error('Email API Error:', error);
+            return false;
+        }
+
         return true;
     } catch (error) {
-        console.error('Email Error:', error.message);
+        console.error('Email Dispatch Error:', error.message);
         return false;
     }
 }
@@ -62,7 +65,9 @@ async function sendOTPEmail(email, otp) {
 }
 
 async function sendInvitationEmail(email, projectName, inviteToken) {
-    const inviteUrl = `http://localhost:5173/accept-invitation/${inviteToken}`;
+    // Determine the base URL dynamically or fallback to localhost for development
+    const baseUrl = config.frontendUrl || process.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5173';
+    const inviteUrl = `${baseUrl}/accept-invitation/${inviteToken}`;
     console.log(`\n[DEV SECURITY] Invite URL for ${email}: ${inviteUrl}\n`);
 
     const html = `
