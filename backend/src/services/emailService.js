@@ -1,45 +1,47 @@
-const nodemailer = require('nodemailer');
+// Using native fetch for the Brevo HTTP API to bypass Render's SMTP port blocks
 const { getEnvConfig } = require('../config/env');
 
 const config = getEnvConfig();
 
-// Read Brevo SMTP credentials
-const smtpUser = config.emailUser || process.env.EMAIL_USER;
-const smtpPass = config.emailPass || process.env.EMAIL_PASS;
-
-// Always fallback to a valid email string for the 'from' field
-// This should ideally be the email you used to register Brevo
-const senderEmail = smtpUser || 'srr0607378@gmail.com'; 
-
-const transporter = nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
-    port: 587,
-    secure: false, // Use STARTTLS
-    auth: {
-        user: smtpUser,
-        pass: smtpPass
-    }
-});
+// Read Brevo API key (it's the same as the SMTP pass)
+const apiKey = config.emailPass || process.env.EMAIL_PASS;
+// The sender email should be the user's registered Brevo email
+const senderEmail = config.emailUser || process.env.EMAIL_USER || 'srr0607378@gmail.com'; 
 
 async function sendEmail({ to, subject, html, text }) {
-    if (!smtpUser || !smtpPass) {
-        console.error('Email Error: Missing EMAIL_USER or EMAIL_PASS in environment variables.');
+    if (!apiKey) {
+        console.error('Email Error: Missing EMAIL_PASS (Brevo API Key) in environment variables.');
         return false;
     }
 
-    const mailOptions = {
-        from: `"DevSpace" <${senderEmail}>`,
-        to,
-        subject,
-        html,
-        text
+    const payload = {
+        sender: { name: "DevSpace", email: senderEmail },
+        to: [{ email: to }],
+        subject: subject,
+        htmlContent: html,
+        textContent: text || 'Please view this email in an HTML-compatible client.'
     };
 
     try {
-        await transporter.sendMail(mailOptions);
+        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'api-key': apiKey,
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Brevo API Error:', errorData);
+            return false;
+        }
+
         return true;
     } catch (error) {
-        console.error('Email Dispatch Error:', error.message);
+        console.error('Email Dispatch HTTP Error:', error.message);
         return false;
     }
 }
