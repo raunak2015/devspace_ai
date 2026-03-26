@@ -294,7 +294,8 @@ async function googleLogin(req, res, next) {
                 idToken: credential,
                 audience: googleClientId
             });
-        } catch {
+        } catch (err) {
+            console.error('Google verifyIdToken error:', err);
             res.status(401);
             throw new Error('Invalid Google token.');
         }
