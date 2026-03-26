@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { getCurrentUserProfile, loginUser, registerUser, resendOtp, updateUserProfile, verifyOtp } from '../services/authService';
+import { getCurrentUserProfile, googleLogin as googleLoginService, loginUser, registerUser, resendOtp, updateUserProfile, verifyOtp } from '../services/authService';
 
 const AuthContext = createContext(null);
 const SESSION_KEY = 'devspace_user';
@@ -79,6 +79,19 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(SESSION_KEY);
   };
 
+  const loginWithGoogle = async (credential) => {
+    const response = await googleLoginService(credential);
+    const sessionUser = response?.user;
+    const token = response?.token;
+
+    if (!sessionUser || !token) {
+      throw new Error('Unexpected server response during Google login.');
+    }
+
+    saveSession(sessionUser, token);
+    return sessionUser;
+  };
+
   const refreshProfile = async () => {
     const response = await getCurrentUserProfile();
     const profileUser = response?.user;
@@ -129,6 +142,7 @@ export function AuthProvider({ children }) {
       confirmOtp,
       requestNewOtp,
       logout,
+      loginWithGoogle,
       refreshProfile,
       updateProfile,
       isAuthenticated: Boolean(user)

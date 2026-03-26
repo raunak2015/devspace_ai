@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const { getEnvConfig } = require('../config/env');
 const { sendOTPEmail } = require('../services/emailService');
 
@@ -275,11 +276,82 @@ async function updateProfile(req, res, next) {
     }
 }
 
+async function googleLogin(req, res, next) {
+    try {
+        const { credential } = req.body;
+
+        if (!credential) {
+            res.status(400);
+            throw new Error('Google credential is required.');
+        }
+
+        const { googleClientId } = getEnvConfig();
+        const client = new OAuth2Client(googleClientId);
+
+        let ticket;
+        try {
+            ticket = await client.verifyIdToken({
+                idToken: credential,
+                audience: googleClientId
+            });
+        } catch {
+            res.status(401);
+            throw new Error('Invalid Google token.');
+        }
+
+        const payload = ticket.getPayload();
+        const { sub: googleId, email: rawEmail, name: rawName } = payload;
+        const email = normalizeEmail(rawEmail);
+        const name = String(rawName || 'Google User').trim();
+
+        // Try to find user by googleId first, then by email
+        let user = await User.findOne({ googleId });
+
+        if (!user) {
+            user = await User.findOne({ email });
+
+            if (user) {
+                // Existing local user — link their Google account
+                user.googleId = googleId;
+                if (!user.isVerified) {
+                    user.isVerified = true;
+                }
+                await user.save();
+            } else {
+                // Brand new user via Google
+                user = await User.create({
+                    name,
+                    email,
+                    googleId,
+                    authProvider: 'google',
+                    isVerified: true
+                });
+            }
+        }
+
+        const token = generateToken(user);
+
+        res.status(200).json({
+            message: 'Google login successful.',
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                createdAt: user.createdAt
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     registerUser,
     verifyOTP,
     resendOTP,
     loginUser,
+    googleLogin,
     getCurrentUser,
     updateProfile
 };

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import LampIllustration from '../components/LampIllustration';
 
@@ -12,7 +13,7 @@ function LoginPage() {
   const emailRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated } = useAuth();
+  const { login, loginWithGoogle, isAuthenticated } = useAuth();
   const signupMessage = location.state?.signupMessage || '';
 
   useEffect(() => {
@@ -69,6 +70,23 @@ function LoginPage() {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setLoading(true);
+    try {
+      await loginWithGoogle(credentialResponse.credential);
+      navigate('/dashboard', { replace: true });
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Google login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError('Google sign-in was cancelled or failed.');
+  };
+
   const handlePullThread = () => {
     setThreadPulled(true);
     setLampOn((prev) => !prev);
@@ -83,7 +101,6 @@ function LoginPage() {
   const cardClass = 'border-slate-800 bg-[#0f172a]/95 shadow-2xl backdrop-blur-md';
   const labelClass = 'text-slate-400 font-bold uppercase tracking-widest text-[10px]';
   const inputClass = 'border-slate-800 bg-[#020617] text-white placeholder:text-slate-600 focus:border-blue-500/50 focus:ring-blue-500/10 shadow-inner';
-  const helperClass = 'text-slate-500';
   const linkClass = 'text-blue-400 hover:text-blue-300 transition-colors';
 
   return (
@@ -173,6 +190,26 @@ function LoginPage() {
                 {loading ? 'Authenticating...' : 'Establish Connection'}
               </button>
             </form>
+
+            {/* Google Sign-In Divider */}
+            <div className="flex items-center gap-3 my-5">
+              <div className="flex-1 h-px bg-slate-800/80"></div>
+              <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">or</span>
+              <div className="flex-1 h-px bg-slate-800/80"></div>
+            </div>
+
+            {/* Google Sign-In Button */}
+            <div className="flex justify-center [&>div]:w-full">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="filled_black"
+                size="large"
+                shape="pill"
+                text="signin_with"
+                width="100%"
+              />
+            </div>
 
             <div className="mt-6 pt-6 border-t border-slate-800/50 flex flex-col items-center gap-3">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">

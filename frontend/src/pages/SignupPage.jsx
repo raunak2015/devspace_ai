@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 import LampIllustration from '../components/LampIllustration';
 import { useAuth } from '../context/AuthContext';
 
@@ -16,7 +17,7 @@ function SignupPage() {
   const [loading, setLoading] = useState(false);
   const nameRef = useRef(null);
   const navigate = useNavigate();
-  const { signup, isAuthenticated } = useAuth();
+  const { signup, loginWithGoogle, isAuthenticated } = useAuth();
 
   const pageClass = 'bg-[#020617] text-white';
   const overlayClass = 'bg-[radial-gradient(circle_at_50%_-10%,rgba(59,130,246,0.1),transparent_30%),radial-gradient(circle_at_10%_80%,rgba(37,99,235,0.05),transparent_28%)]';
@@ -95,6 +96,23 @@ function SignupPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setLoading(true);
+    try {
+      await loginWithGoogle(credentialResponse.credential);
+      navigate('/dashboard', { replace: true });
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Google sign-up failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError('Google sign-in was cancelled or failed.');
   };
 
   const handlePullThread = () => {
@@ -212,6 +230,26 @@ function SignupPage() {
                 {loading ? 'Synthesizing...' : 'Register Identity'}
               </button>
             </form>
+
+            {/* Google Sign-Up Divider */}
+            <div className="flex items-center gap-3 my-5">
+              <div className="flex-1 h-px bg-slate-800/80"></div>
+              <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">or</span>
+              <div className="flex-1 h-px bg-slate-800/80"></div>
+            </div>
+
+            {/* Google Sign-Up Button */}
+            <div className="flex justify-center [&>div]:w-full">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="filled_black"
+                size="large"
+                shape="pill"
+                text="signup_with"
+                width="100%"
+              />
+            </div>
 
             <div className="mt-6 pt-6 border-t border-slate-800/50 flex flex-col items-center gap-3">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">

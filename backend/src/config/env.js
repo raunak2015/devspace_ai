@@ -12,7 +12,8 @@ function getEnvConfig() {
         geminiModel: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
         emailService: process.env.EMAIL_SERVICE || 'gmail',
         emailUser: process.env.EMAIL_USER || '',
-        emailPass: process.env.EMAIL_PASS || ''
+        emailPass: process.env.EMAIL_PASS || '',
+        googleClientId: process.env.GOOGLE_CLIENT_ID || ''
     };
 }
 

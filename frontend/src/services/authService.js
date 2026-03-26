@@ -92,11 +92,16 @@ async function updateUserProfile(payload) {
     return authRequest('/auth/profile', 'PATCH', payload);
 }
 
+async function googleLogin(credential) {
+    return request('/auth/google', { credential });
+}
+
 export {
     loginUser,
     registerUser,
     verifyOtp,
     resendOtp,
     getCurrentUserProfile,
-    updateUserProfile
+    updateUserProfile,
+    googleLogin
 };
